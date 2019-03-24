@@ -84,98 +84,110 @@ function PanasonicTV(log, config) {
 // TV Power
 PanasonicTV.prototype.getOn = function(callback) {
     var self = this;
-    self.getOnCallback = callback;
-    
-    this.determinePowerState(this.ipAddress, function(state) {
-        self.getOnCallback(null, state == 1);
-    });
-}
 
-PanasonicTV.prototype.setOn = function(isOn, callback) {
-    var self = this;
-    self.setOnCallback = callback;
-    
-    this.determinePowerState(this.ipAddress, function(state) {
-        if (state == -1 && isOn) {
-            self.tv.send(PanasonicAPI.POWER_TOGGLE);
-            self.setOnCallback(null, true);
-            console.log("TV is turning off...");
-        } else if (state == 0 && isOn) {
-            self.setOnCallback(new Error("TV is off and can't be woken."));
-        }  else if (state == 1 && !isOn) {
-            self.tv.send(PanasonicAPI.POWER_TOGGLE);
-            self.setOnCallback(null, false);
-            console.log("TV is turning on...")
-        } else {
-            self.setOnCallback(new Error("Cannot turn TV " + (on ? "ON" : "OFF") + ". We are being told that it is " + state));
-        }
-    });
-}
-
-// Return cases
-// -1: TV is in standby (HTTP Response Code 400 - Bad Request)
-// 0: TV is off or does not support standby wake-up
-// 1: TV is on (HTTP Response Code 200)
-PanasonicTV.prototype.determinePowerState = function(ipAddress, callback) {
-    var path = "/dmr/control_0";
-    var body = '<?xml version="1.0" encoding="utf-8"?>\n' +
-               '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">\n' +
-               ' <s:Body>\n' +
-               '  <u:getVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1">\n' +
-               '   <InstanceID>0</InstanceID><Channel>Master</Channel>\n' +
-               '  </u:getVolume>\n' +
-               ' </s:Body>\n' +
-               '</s:Envelope>\n';
-    var postOptions = {
-        host: ipAddress,
-        port: '55000',
-        path: path,
-        method: 'POST',
-        timeout: 2000,
-        headers: {
-            'Content-Length': body.length,
-            'Content-Type': 'text/xml; charset="utf-8"',
-            'User-Agent': 'net.thlabs.nodecontrol',
-            'SOAPACTION': '"urn:schemas-upnp-org:service:RenderingControl:1#getVolume"'
-        }
+    let getRequest = {
+        host: self.ipAddress,
+        port: 55000,
+        timeout: 1000,
+        method: "GET",
+        path: "/nrc/control_0"
     };
 
-    // Prepare to get power state
-    var callbackHasPerformed = false;
-    var request = http.request(postOptions, function(result) {
+    var timedOut = false;
+    let request = http.request(getRequest, result => {
+        self.log("Getting power status...");
+
         result.setEncoding('utf8');
-        result.on('data', function(data) {}); // Required for end event to be called
-        result.on('end', function() {
-            if (result.statusCode == 200 && !callbackHasPerformed) {
-                callback(1);
-            } else if (!callbackHasPerformed) {
-                callback(-1);
-            }
+
+        result.on('data', data => {
+            self.log("Response recieved: " + data);
+        });
+        result.on('end', () => {
+            self.log("Responded, TV is on.");
+            callback(null, true);
         });
     });
 
-    // Handle Error
-    request.on('error', function(error) {
-        console.log(error);
-        if (!callbackHasPerformed) {
-            callback(0);
-            callbackHasPerformed = true;
+    request.on('timeout', () => {
+        self.log("Did not respond. TV is off.");
+        request.abort();
+        timedOut = true;
+    });
+
+    request.on('error', error => {
+        if (!timedOut) {
+            callback(null, false);
         } else {
-            console.log ("already called callback");
+            callback(error, false);
         }
     });
 
-    // Handle Timeout
-    request.on('timeout', function() {
-        console.log('timed out');
-        if (!callbackHasPerformed) {
-            callback(0);
-            callbackHasPerformed = true;
+    request.end();
+}
+
+// If response recieved, TV goes from off to on
+// If request times out, TV goes from on to off
+PanasonicTV.prototype.setOn = function(isOn, callback) {
+    var self = this;
+    
+    if (isOn) {
+        self.log("TV does not support power on/off.");
+        callback(null, false);
+        return;
+    }
+
+    let url = "/nrc/control_0"
+    let body = "<?xml version='1.0' encoding='utf-8'?> " +
+    "<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/' s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/'> " +
+    " <s:Body> " +
+    "   <u:X_SendKey xmlns:u='urn:panasonic-com:service:p00NetworkControl:1'> " +
+    "     <X_KeyEvent>NRC_POWER-ONOFF</X_KeyEvent> " +
+    "   </u:X_SendKey> " +
+    " </s:Body> " +
+    "</s:Envelope>" +
+    "";
+    let postRequest = {
+        host: self.ipAddress,
+        path: url,
+        port: 55000,
+        timeout: 2000,
+        method: "POST",
+        headers: {
+            "Content-Length": body.count,
+            "Content-Type": 'text/xml; charset="utf-8"',
+            SOAPACTION: '"urn:panasonic-com:servicee:p00NetworkControl:1#X_SendKey"',
+            Accept: "text/xml"
         }
-        else {
-          console.log ("already called callback");
+    };
+
+    var timedOut = false;
+    let request = http.request(postRequest, response => {
+        self.log("Toggling power switch on TV");
+
+        response.setEncoding("utf8");
+
+        response.on("data", data => {
+            self.log("Response recieved.");
+        });
+        response.on("end", () => {
+            self.log("  TV is now on.")
+            callback()
+        });
+    });
+
+    request.on('timeout', () => {
+        self.log("TV did not respond.\n  TV is now off.");
+        request.abort();
+        timedOut = true;
+    });
+
+    request.on('error', error => {
+        if (!timedOut) {
+            callback(null, false);
+        } else {
+            callback(error, false);
         }
-      });
+    });
 
     request.write(body);
     request.end();
