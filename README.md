@@ -9,4 +9,3 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit
   
 # Installation
   This version is currently not working. Please keep an eye on the space!
-  
