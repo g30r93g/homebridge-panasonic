@@ -4,7 +4,7 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit
 🚧 This version is currently under construction. It does not currently work. 🚧
 
 # Minimum Requirements
-  1. iOS 12.2 (Currently in Beta)
+  1. iOS 12.2
   2. Homebridge v0.4.46
   
 # Installation

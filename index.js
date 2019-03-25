@@ -1,6 +1,6 @@
 var PanasonicAPI = require('panasonic-viera-control/panasonicviera.js');
 var http = require('http');
-var Service, Characteristic, VolumeCharacteristic;
+var Service, Characteristic;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
@@ -20,74 +20,42 @@ const inputList = {
 function PanasonicTV(log, config) {
     this.log = log;
     this.name = config.name;
-    this.ipAddress = config.ip;
-    this.manufacturer = "Panasonic";
+    this.HOST = config.ip;
     
     this.enabledServices = [];
     this.isOn = false;
 
     // Configure TV Control
-    this.tv = new PanasonicAPI(this.ipAddress);
+    this.tv = new PanasonicAPI(this.HOST);
     
-    // Configure HomeKit TV
-    this.tvServies = new Service.Television(this.name, "Television");
-    this.tvService.setCharacteristic(
-        Characteristic.SleepDiscoveryMode,
-        Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE
-    );
+    // Configure HomeKit TV Accessory
+    this.tvService = new Service.Television(this.name, "Television");
+    this.tvService.setCharacteristic(Characteristic.ConfiguredName, this.name);
+    this.tvService.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
   
-    // Configure TV Power
-    this.tvService
-        .getCharacteristic(Characteristic.Active)
-        .on("set", this.setPowerState.bind(this))
-        .on("get", this.getPowerState.bind(this));
-  
-    this.tvService
-        .setCharacteristic(Characteristic.ActiveIdentifier, 1);
-    
-    // Configure TV Inputs
-    this.tvService
-        .getCharacteristic(Characteristic.ActiveIdentifier)
-        .on("set", this.setInput.bind(this, inputList));
+    this.tvService.getCharacteristic(Characteristic.Active)
+        .on("set", this.setOn.bind(this))
+        .on("get", this.getOn.bind(this));
+    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
 
-    
-    this.inputTV = createInputSource("TV", "TV", 1);
-    this.inputHDMI1 = createInputSource("HDMI 1", "HDMI 1", 2);
-    this.inputHDMI2 = createInputSource("HDMI 2", "HDMI 2", 3);
-  
-    this.tvService.addLinkedService(this.inputTV);
-    this.tvService.addLinkedService(this.inputHDMI1);
-    this.tvService.addLinkedService(this.inputHDMI2);
-  
-    // Configure TV Volume
-    this.speakerService = new Service.TelevisionSpeaker(
-    this.name + " Volume",
-        "volumeService"
-    );
-  
-    this.speakerService.setCharacteristic(
-        Characteristic.Active, 
-        Characteristic.Active.ACTIVE
-    ).setCharacteristic(
-      Characteristic.VolumeControlType,
-      Characteristic.VolumeControlType.ABSOLUTE
-    );
-  
-    this.tvService.addLinkedService(this.speakerService);
-  
-    this.enabledServices.push(this.tvService);
-    this.enabledServices.push(this.speakerService);
-    this.enabledServices.push(this.inputTV);
-    this.enabledServices.push(this.inputHDMI1);
-    this.enabledServices.push(this.inputHDMI2);
+    // Configure HomeKit TV Device Information
+    this.deviceInformation = new Service.AccessoryInformation();
+    this.deviceInformation
+        .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
+        .setCharacteristic(Characteristic.Model, "Unknown")
+        .setCharacteristic(Characteristic.SerialNumber, "Unknown");
 };
+
+PanasonicTV.prototype.getServices = function() {
+    return [this.deviceInformation, this.tvService];
+}
 
 // TV Power
 PanasonicTV.prototype.getOn = function(callback) {
     var self = this;
 
     let getRequest = {
-        host: self.ipAddress,
+        host: self.HOST,
         port: 55000,
         timeout: 1000,
         method: "GET",
@@ -148,7 +116,7 @@ PanasonicTV.prototype.setOn = function(isOn, callback) {
     "</s:Envelope>" +
     "";
     let postRequest = {
-        host: self.ipAddress,
+        host: self.HOST,
         path: url,
         port: 55000,
         timeout: 2000,
