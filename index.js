@@ -1,4 +1,4 @@
-var PanasonicControl = require('panasonic-viera-control/panasonicviera.js');
+var PanasonicControl = require('panasonic-viera-control');
 var http = require('http');
 var Service, Characteristic;
 
