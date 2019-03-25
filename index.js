@@ -1,3 +1,4 @@
+var PanasonicControl = require('panasonic-viera-control/panasonicviera.js');
 var http = require('http');
 var Service, Characteristic;
 
@@ -39,6 +40,9 @@ PanasonicTV.prototype.getServices = function() {
         .on("set", this.setOn.bind(this))
         .on("get", this.getOn.bind(this));
     this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
+
+    // Initialise connection to TV
+    this.tvControls = new PanasonicControl(this.HOST)
 
     return [this.deviceInformation, this.tvService];
 }
@@ -91,11 +95,30 @@ PanasonicTV.prototype.getOn = function(callback) {
 // If request times out, TV goes from on to off
 PanasonicTV.prototype.setOn = function(isOn, callback) {
     let self = this;
+
+    if (isOn) {
+        self.log("Turning TV off.");
+        self.tv.send(self.tvControls.POWER_TOGGLE);
+        callback(true);
+    } else if (!isOn) {
+        self.log("Turning TV on.");
+        self.tv.send(self.tvControls.POWER_TOGGLE);
+        callback(true);
+    } else {
+        self.log("Changing TV power state is not supported by this device.");
+        callback(false);
+    }
+}
+
+PanasonicTV.prototype.setOnOLD = function(isOn, callback) {
+    let self = this;
     
     if (!isOn) {
         self.log("TV does not support power on/off.");
         callback(null, false);
         return;
+    } else {
+
     }
 
     let url = "/nrc/control_0"
