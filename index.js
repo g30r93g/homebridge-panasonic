@@ -94,7 +94,7 @@ PanasonicTV.prototype.getOn = function(callback) {
 PanasonicTV.prototype.setOn = function(isOn, callback) {
     var self = this;
     
-    if (isOn) {
+    if (!isOn) {
         self.log("TV does not support power on/off.");
         callback(null, false);
         return;
