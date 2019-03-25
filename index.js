@@ -1,3 +1,4 @@
+var PanasonicCommands = require('viera.js');
 var http = require('http');
 var Service, Characteristic;
 
@@ -32,6 +33,8 @@ PanasonicTV.prototype.getServices = function() {
         .on("get", this.getOn.bind(this))
         .on("set", this.setOn.bind(this));
     this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
+
+    this.tv = new PanasonicCommands(this.HOST)
 
     return [this.deviceInformation, this.tvService];
 }
@@ -80,70 +83,16 @@ PanasonicTV.prototype.getOn = function(callback) {
     request.end();
 }
 
-// If response recieved, TV goes from off to on
-// If request times out, TV goes from on to off
 PanasonicTV.prototype.setOn = function(isOn, callback) {
     let self = this;
-    
-    if (!isOn) {
-        self.log("TV does not support power on/off.");
-        callback(null, false);
-        return;
+
+    if (isOn) {
+        self.log("Attempting power off...");
+        self.tv.sendCommand("POWER");
+        callback(null, !isOn);
+    } else {
+        self.log("Attempting power on...");
+        self.tv.sendCommand("POWER");
+        callback(null, !isOn);
     }
-
-    let url = "/nrc/control_0"
-    let body = "<?xml version='1.0' encoding='utf-8'?> " +
-    "<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/' s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/'> " +
-    " <s:Body> " +
-    "   <u:X_SendKey xmlns:u='urn:panasonic-com:service:p00NetworkControl:1'> " +
-    "     <X_KeyEvent>NRC_POWER-ONOFF</X_KeyEvent> " +
-    "   </u:X_SendKey> " +
-    " </s:Body> " +
-    "</s:Envelope>" +
-    "";
-    let postRequest = {
-        host: self.HOST,
-        path: url,
-        port: 55000,
-        timeout: 2000,
-        method: "POST",
-        headers: {
-            "Content-Length": body.count,
-            "Content-Type": 'text/xml; charset="utf-8"',
-            SOAPACTION: '"urn:panasonic-com:service:p00NetworkControl:1#NRC_POWER-ONOFF"',
-            Accept: "text/xml"
-        }
-    };
-
-    var timedOut = false;
-    let request = http.request(postRequest, response => {
-        self.log("Toggling power switch on TV");
-
-        response.setEncoding("utf8");
-
-        response.on("data", data => {
-            self.log("Response recieved.");
-        });
-        response.on("end", () => {
-            self.log("  TV is now on.")
-            callback()
-        });
-    });
-
-    request.on('timeout', () => {
-        self.log("TV did not respond.\n  TV is now off.");
-        request.abort();
-        timedOut = true;
-    });
-
-    request.on('error', error => {
-        if (!timedOut) {
-            callback(null, false);
-        } else {
-            callback(error, false);
-        }
-    });
-
-    request.write(body);
-    request.end();
 }
