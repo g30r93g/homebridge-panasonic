@@ -9,28 +9,20 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit
   
 ## Installation
   1. Install homebridge -> http://homebridge.io
-  2. Install this plugin: 
-  ``` console
-      $ sudo npm install -g homebridge-panasonic-viera-tv
-  ```
-  3. Configure the plugin in your config.json file
+  2. Install this plugin: `sudo npm install -g homebridge-panasonic-viera-tv`
+  3. Change your config.json file
   
-  Note: You may also need to install viera.js:
-  ``` console
-      $ sudo npm install -g viera.js
-  ```
+  Note: You may also need to install viera.js: `sudo npm install -g viera.js`
 
 ## Sample Config
   ``` JSON
+  "accessories": [
       {
-        "accessories": [
-          {
-            "accessory": "Panasonic-TV",
-            "name": "YOUR_TV_NAME_HERE",
-            "ipaddress": "YOUR_TV_IP_ADDRESS_HERE"
-          }
-        ],
+          "accessory": "Panasonic-TV",
+          "name": "YOUR_TV_NAME_HERE",
+          "ipaddress": "YOUR_TV_IP_ADDRESS_HERE"
       }
+  ]
   ```
 
 ## Known Issues
