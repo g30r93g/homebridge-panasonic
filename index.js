@@ -1,4 +1,4 @@
-var PanasonicAPI = require('./panasonicviera');
+var PanasonicAPI = require('panasonic-viera-control/panasonicviera.js');
 var http = require('http');
 var Service, Characteristic, VolumeCharacteristic;
 
@@ -6,7 +6,7 @@ module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
   
-    homebridge.registerAccessory("homebridge-panasonic", "TV", PanasonicTV);
+    homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
 };
 
 // Inputs
@@ -21,6 +21,7 @@ function PanasonicTV(log, config) {
     this.log = log;
     this.name = config.name;
     this.ipAddress = config.ip;
+    this.manufacturer = "Panasonic";
     
     this.enabledServices = [];
     this.isOn = false;
