@@ -1,4 +1,3 @@
-var PanasonicControl = require('panasonic-viera-control');
 var http = require('http');
 var Service, Characteristic;
 
@@ -6,13 +5,6 @@ module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
     homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
-};
-
-// Inputs
-const inputList = {
-    1: "TV",
-    2: "HDMI 1",
-    3: "HDMI 2",
 };
 
 // Configure TV
@@ -37,12 +29,9 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.setCharacteristic(Characteristic.SleepDiscoveryMode, 1);
   
     this.tvService.getCharacteristic(Characteristic.Active)
-        .on("set", this.setOn.bind(this))
-        .on("get", this.getOn.bind(this));
+        .on("get", this.getOn.bind(this))
+        .on("set", this.setOn.bind(this));
     this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
-
-    // Initialise connection to TV
-    this.tvControls = new PanasonicControl(this.HOST)
 
     return [this.deviceInformation, this.tvService];
 }
@@ -95,39 +84,20 @@ PanasonicTV.prototype.getOn = function(callback) {
 // If request times out, TV goes from on to off
 PanasonicTV.prototype.setOn = function(isOn, callback) {
     let self = this;
-
-    if (isOn) {
-        self.log("Turning TV off.");
-        self.tv.send(self.tvControls.POWER_TOGGLE);
-        callback(true);
-    } else if (!isOn) {
-        self.log("Turning TV on.");
-        self.tv.send(self.tvControls.POWER_TOGGLE);
-        callback(true);
-    } else {
-        self.log("Changing TV power state is not supported by this device.");
-        callback(false);
-    }
-}
-
-PanasonicTV.prototype.setOnOLD = function(isOn, callback) {
-    let self = this;
     
     if (!isOn) {
         self.log("TV does not support power on/off.");
         callback(null, false);
         return;
-    } else {
-
     }
 
     let url = "/nrc/control_0"
     let body = "<?xml version='1.0' encoding='utf-8'?> " +
     "<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/' s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/'> " +
     " <s:Body> " +
-    "   <u:SendKey xmlns:u='urn:panasonic-com:service:p00NetworkControl:1'> " +
-    "     <KeyEvent>NRC_POWER-ONOFF</KeyEvent> " +
-    "   </u:SendKey> " +
+    "   <u:X_SendKey xmlns:u='urn:panasonic-com:service:p00NetworkControl:1'> " +
+    "     <X_KeyEvent>NRC_POWER-ONOFF</X_KeyEvent> " +
+    "   </u:X_SendKey> " +
     " </s:Body> " +
     "</s:Envelope>" +
     "";
@@ -140,7 +110,7 @@ PanasonicTV.prototype.setOnOLD = function(isOn, callback) {
         headers: {
             "Content-Length": body.count,
             "Content-Type": 'text/xml; charset="utf-8"',
-            SOAPACTION: '"urn:panasonic-com:service:p00NetworkControl:1#SendKey"',
+            SOAPACTION: '"urn:panasonic-com:service:p00NetworkControl:1#NRC_POWER-ONOFF"',
             Accept: "text/xml"
         }
     };
