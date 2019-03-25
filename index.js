@@ -21,32 +21,26 @@ function PanasonicTV(log, config) {
     this.log = log;
     this.name = config.name;
     this.HOST = config.ip;
-    
-    this.enabledServices = [];
-    this.isOn = false;
+};
 
-    // Configure TV Control
-    this.tv = new PanasonicAPI(this.HOST);
-    
-    // Configure HomeKit TV Accessory
-    this.tvService = new Service.Television(this.name, "Television");
-    this.tvService.setCharacteristic(Characteristic.ConfiguredName, this.name);
-    this.tvService.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
-  
-    this.tvService.getCharacteristic(Characteristic.Active)
-        .on("set", this.setOn.bind(this))
-        .on("get", this.getOn.bind(this));
-    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
-
+PanasonicTV.prototype.getServices = function() {
     // Configure HomeKit TV Device Information
     this.deviceInformation = new Service.AccessoryInformation();
     this.deviceInformation
         .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
         .setCharacteristic(Characteristic.Model, "Unknown")
         .setCharacteristic(Characteristic.SerialNumber, "Unknown");
-};
 
-PanasonicTV.prototype.getServices = function() {
+    // Configure HomeKit TV Accessory
+    this.tvService = new Service.Television(this.name, "Television");
+    this.tvService.setCharacteristic(Characteristic.ConfiguredName, this.name);
+    this.tvService.setCharacteristic(Characteristic.SleepDiscoveryMode, 1);
+  
+    this.tvService.getCharacteristic(Characteristic.Active)
+        .on("set", this.setOn.bind(this))
+        .on("get", this.getOn.bind(this));
+    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
+
     return [this.deviceInformation, this.tvService];
 }
 
