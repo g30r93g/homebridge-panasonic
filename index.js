@@ -19,8 +19,9 @@ const inputList = {
 // Configure TV
 function PanasonicTV(log, config) {
     this.log = log;
-    this.name = config.name;
-    this.HOST = config.ip;
+    this.config = config;
+    this.name = config["name"];
+    this.HOST = config["ipaddress"];
 };
 
 PanasonicTV.prototype.getServices = function() {
