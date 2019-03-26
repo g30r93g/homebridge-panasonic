@@ -43,12 +43,28 @@ PanasonicTV.prototype.getServices = function() {
 PanasonicTV.prototype.getOn = function(callback) {
     let self = this;
 
+    var path = "/nrc/control_0?";
+    var body = '<?xml version="1.0" encoding="utf-8"?>\n' +
+             '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">\n' +
+             ' <s:Body>\n' +
+             '  <u:getVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1">\n' +
+             '   <InstanceID>0</InstanceID><Channel>Master</Channel>\n' +
+             '  </u:getVolume>\n' +
+             ' </s:Body>\n' +
+             '</s:Envelope>\n';
+
     let getRequest = {
         host: self.HOST,
-        port: 55000,
+        port: 1900,
+        path: path,
         timeout: 1000,
         method: "GET",
-        path: "/nrc/control_0"
+        headers: {
+            'Content-Length': body.length,
+            'Content-Type': 'text/xml; charset="utf-8"',
+            'User-Agent': 'net.thlabs.nodecontrol',
+            'SOAPACTION': '"urn:schemas-upnp-org:service:RenderingControl:1#getVolume"'
+        }
     };
 
     var timedOut = false;

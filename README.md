@@ -27,4 +27,3 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit
 
 ## Known Issues
   1. Input list is empty. I'm trying to find a way to detect the number of HDMI inputs the TV has. The list will definitely contain: Aerial/Satellite TV, HDMI, AV
-  2. The power value may be the opposite of the actual value.
