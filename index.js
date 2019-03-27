@@ -1,6 +1,6 @@
 var PanasonicCommands = require('viera.js');
 var http = require('http');
-var Service, Characteristic;
+var Service, Characteristic, VolumeCharacteristic;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
@@ -13,6 +13,11 @@ const inputs = {
     1: "TV",
     2: "HDMI 1",
     3: "HDMI 2"
+}
+
+const volumeButtons = {
+    0: "VolumeUp",
+    1: "VolumeDown"
 }
 
 // Configure TV
@@ -39,52 +44,88 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.getCharacteristic(Characteristic.Active)
         .on("get", this.getOn.bind(this))
         .on("set", this.setOn.bind(this));
+    
+    // Configure HomeKit TV Accessory Inputs
+    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1)
+    this.tvService.getCharacteristic(Characteristic.ActiveIdentifier)
+        .on("set", this.setInput.bind(this, inputs));
 
-    // Configure Panasonic TV Commands
-    this.tv = new PanasonicCommands(this.HOST);
-
-    return [this.deviceInformation, this.tvService];
-}
-
-// TV Inputs
-PanasonicTV.prototype.setInputs() = function() {
-//    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1); // Sets the default input
-
-    this.inputTV = new Service.InputSource("tv", "TV");
-    this.inputTV
-        .setCharacteristic(Characteristic.Identifier, 1)
-        .setCharacteristic(Characteristic.ConfiguredName, "TV")
-        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-        .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.TUNER)
-        .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
-
-    this.inputHDMI1 = new Service.InputSource("hdmi1", "HDMI 1");
-    this.inputHDMI1
-        .setCharacteristic(Characteristic.Identifier, 2)
-        .setCharacteristic(Characteristic.ConfiguredName, "HDMI 1")
-        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-        .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI)
-        .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
-
-    this.inputHDMI2 = new Service.InputSource("hdmi2", "HDMI 2");
-    this.inputHDMI2
-        .setCharacteristic(Characteristic.Identifier, 3)
-        .setCharacteristic(Characteristic.ConfiguredName, "HDMI 2")
-        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-        .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI)
-        .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
-
+    this.inputTV = createInputSource("tv", "TV", 1, Characteristic.InputSourceType.TUNER);
+    this.inputHDMI1 = createInputSource("hdmi1", "HDMI 1", 2, Characteristic.InputSourceType.HDMI);
+    this.inputHDMI2 = createInputSource("hdmi2", "HDMI 2", 3, Characteristic.InputSourceType.HDMI);
     this.tvService.addLinkedService(this.inputTV);
     this.tvService.addLinkedService(this.inputHDMI1);
     this.tvService.addLinkedService(this.inputHDMI2);
 
-    this.enabledServices.push(this.inputTV);
-    this.enabledServices.push(this.inputHDMI1);
-    this.enabledServices.push(this.inputHDMI2);
+    // Configure HomeKit TV Accessory Volume
+    this.speakerService = new Service.TelevisionSpeaker(this.name + " Volume", "volumeService");
+    this.speakerService
+        .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
+        .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE)
+        .getCharacteristic(Characteristic.VolumeSelector).on("set", this.setVolume.bind(this, volumeButtons))
+        .getCharacteristic(Characteristic.VolumeSelector).on("get", this.getVolume.bind(this));
+    this.speakerService.addLinkedService(this.speakerService);
 
-    this.inputAppIds.push("tv")
-    this.inputAppIds.push("hdmi1")
-    this.inputAppIds.push("hdmi2")
+    // Configure Panasonic TV Commands
+    this.tv = new PanasonicCommands(this.HOST);
+
+    return [this.deviceInformation, this.tvService, this.inputTV, this.inputHDMI1, this.inputHDMI2];
+}
+
+// TV Volume
+PanasonicTV.prototype.setVolume = function(volume, newValue, callback) {
+    let volumeInstruction = volume[newValue]
+    if (volumeInstruction == 0) {
+        console.log("Increasing TV Volume");
+        this.tv.sendCommand(increaseVolume());
+        callback(null);
+    } else if (volumeInstruction == 1) {
+        console.log("Decreasing TV Volume");
+        this.tv.sendCommand(decreaseVolume());
+        callback(null);
+    }
+}
+
+PanasonicTV.prototype.getVolume = function(callback) {
+    this.tv.getVolume(function(currentVolume) {
+        console.log("Current TV Volume: " + currentVolume);
+        callback(currentVolume);
+    });
+}
+
+function increaseVolume() {
+    let volume = this.getVolume();
+    return volume + 1;
+}
+
+function decreaseVolume() {
+    let volume = this.getVolume();
+    return volume - 1;
+}
+
+// TV Inputs
+function createInputSource(id, name, number, type) {
+    var input = new Service.InputSource(id, name);
+    input
+      .setCharacteristic(Characteristic.Identifier, number)
+      .setCharacteristic(Characteristic.ConfiguredName, name)
+      .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(Characteristic.InputSourceType, type);
+    return input;
+}
+
+PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
+    let switchingTo = inputList[desiredInput]
+    console.log("Switching input to " + switchingTo);
+    if (desiredInput == 1) {
+        self.tv.sendCommand("TV");
+        callback();
+    } else if (desiredInput == 2 || desiredInput == 3) {
+        self.tv.sendHDMICommand("HDMI" + desiredInput);
+        callback();
+    } else {
+        callback(null);
+    }
 }
 
 // TV Power
@@ -96,7 +137,8 @@ PanasonicTV.prototype.getOn = function(callback) {
              '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">\n' +
              ' <s:Body>\n' +
              '  <u:getVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1">\n' +
-             '   <InstanceID>0</InstanceID><Channel>Master</Channel>\n' +
+             '   <InstanceID>0</InstanceID>' + 
+             '   <Channel>Master</Channel>\n' +
              '  </u:getVolume>\n' +
              ' </s:Body>\n' +
              '</s:Envelope>\n';
