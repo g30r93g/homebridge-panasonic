@@ -8,6 +8,13 @@ module.exports = function(homebridge) {
     homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
 };
 
+// TV Inputs
+const inputs = {
+    1: "TV",
+    2: "HDMI 1",
+    3: "HDMI 2"
+}
+
 // Configure TV
 function PanasonicTV(log, config) {
     this.log = log;
@@ -32,11 +39,52 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.getCharacteristic(Characteristic.Active)
         .on("get", this.getOn.bind(this))
         .on("set", this.setOn.bind(this));
-    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
 
-    this.tv = new PanasonicCommands(this.HOST)
+    // Configure Panasonic TV Commands
+    this.tv = new PanasonicCommands(this.HOST);
 
     return [this.deviceInformation, this.tvService];
+}
+
+// TV Inputs
+PanasonicTV.prototype.setInputs() = function() {
+//    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1); // Sets the default input
+
+    this.inputTV = new Service.InputSource("tv", "TV");
+    this.inputTV
+        .setCharacteristic(Characteristic.Identifier, 1)
+        .setCharacteristic(Characteristic.ConfiguredName, "TV")
+        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.TUNER)
+        .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+
+    this.inputHDMI1 = new Service.InputSource("hdmi1", "HDMI 1");
+    this.inputHDMI1
+        .setCharacteristic(Characteristic.Identifier, 2)
+        .setCharacteristic(Characteristic.ConfiguredName, "HDMI 1")
+        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI)
+        .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+
+    this.inputHDMI2 = new Service.InputSource("hdmi2", "HDMI 2");
+    this.inputHDMI2
+        .setCharacteristic(Characteristic.Identifier, 3)
+        .setCharacteristic(Characteristic.ConfiguredName, "HDMI 2")
+        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI)
+        .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+
+    this.tvService.addLinkedService(this.inputTV);
+    this.tvService.addLinkedService(this.inputHDMI1);
+    this.tvService.addLinkedService(this.inputHDMI2);
+
+    this.enabledServices.push(this.inputTV);
+    this.enabledServices.push(this.inputHDMI1);
+    this.enabledServices.push(this.inputHDMI2);
+
+    this.inputAppIds.push("tv")
+    this.inputAppIds.push("hdmi1")
+    this.inputAppIds.push("hdmi2")
 }
 
 // TV Power
@@ -103,11 +151,11 @@ PanasonicTV.prototype.setOn = function(isOn, callback) {
     let self = this;
 
     if (isOn) {
-        self.log("Attempting power off...");
+        self.log("Attempting power on...");
         self.tv.sendCommand("POWER");
         callback(null, !isOn);
     } else {
-        self.log("Attempting power on...");
+        self.log("Attempting power off...");
         self.tv.sendCommand("POWER");
         callback(null, !isOn);
     }
