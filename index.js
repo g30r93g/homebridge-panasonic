@@ -1,6 +1,6 @@
 var PanasonicCommands = require('viera.js');
 var http = require('http');
-var Service, Characteristic, VolumeCharacteristic;
+var Service, Characteristic;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
@@ -15,9 +15,16 @@ const inputs = {
     3: "HDMI 2"
 }
 
-const volumeButtons = {
-    0: "VolumeUp",
-    1: "VolumeDown"
+// TV Remote Control
+const remoteControl = {
+    1: "up",
+    2: "down",
+    3: "left",
+    4: "right",
+    5: "enter",
+    6: "home", 
+    7: "play",
+    8: "pause"
 }
 
 // Configure TV
@@ -44,6 +51,11 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.getCharacteristic(Characteristic.Active)
         .on("get", this.getOn.bind(this))
         .on("set", this.setOn.bind(this));
+
+    // Configure HomeKit TV Accessory Remote Control
+    this.tvService
+        .getCharacteristic(Characteristic.RemoteKey)
+        .on("set", this.sendRemoteControlKey.bind(this, remoteControl));
     
     // Configure HomeKit TV Accessory Inputs
     this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1)
@@ -57,50 +69,18 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.addLinkedService(this.inputHDMI1);
     this.tvService.addLinkedService(this.inputHDMI2);
 
-    // Configure HomeKit TV Accessory Volume
-    this.speakerService = new Service.TelevisionSpeaker(this.name + " Volume", "volumeService");
-    this.speakerService
-        .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
-        .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE)
-        .getCharacteristic(Characteristic.VolumeSelector).on("set", this.setVolume.bind(this, volumeButtons))
-        .getCharacteristic(Characteristic.VolumeSelector).on("get", this.getVolume.bind(this));
-    this.speakerService.addLinkedService(this.speakerService);
-
     // Configure Panasonic TV Commands
     this.tv = new PanasonicCommands(this.HOST);
 
     return [this.deviceInformation, this.tvService, this.inputTV, this.inputHDMI1, this.inputHDMI2];
 }
 
-// TV Volume
-PanasonicTV.prototype.setVolume = function(volume, newValue, callback) {
-    let volumeInstruction = volume[newValue]
-    if (volumeInstruction == 0) {
-        console.log("Increasing TV Volume");
-        this.tv.sendCommand(increaseVolume());
-        callback(null);
-    } else if (volumeInstruction == 1) {
-        console.log("Decreasing TV Volume");
-        this.tv.sendCommand(decreaseVolume());
-        callback(null);
-    }
-}
-
-PanasonicTV.prototype.getVolume = function(callback) {
-    this.tv.getVolume(function(currentVolume) {
-        console.log("Current TV Volume: " + currentVolume);
-        callback(currentVolume);
-    });
-}
-
-function increaseVolume() {
-    let volume = this.getVolume();
-    return volume + 1;
-}
-
-function decreaseVolume() {
-    let volume = this.getVolume();
-    return volume - 1;
+// TV Remote Control
+PanasonicTV.prototype.sendRemoteControlKey = function(remoteControlMap, selected, callback) {
+    let buttonSelected = remoteControlMap[selected];
+    this.log("Selected " + buttonSelected);
+    this.tv.sendCommand(buttonSelected);
+    callback(null);
 }
 
 // TV Inputs
@@ -115,90 +95,59 @@ function createInputSource(id, name, number, type) {
 }
 
 PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
-    let switchingTo = inputList[desiredInput]
-    console.log("Switching input to " + switchingTo);
+    let switchingTo = inputList[desiredInput];
+    this.log("Switching input to " + switchingTo);
     if (desiredInput == 1) {
-        self.tv.sendCommand("TV");
-        callback();
+        this.tv.sendCommand("TV");
+        callback(null);
     } else if (desiredInput == 2 || desiredInput == 3) {
-        self.tv.sendHDMICommand("HDMI" + desiredInput);
-        callback();
+        // this.tv.sendHDMICommand("HDMI" + desiredInput);
+        callback(null);
     } else {
         callback(null);
     }
 }
 
-// TV Power
 PanasonicTV.prototype.getOn = function(callback) {
-    let self = this;
-
-    var path = "/nrc/control_0?";
-    var body = '<?xml version="1.0" encoding="utf-8"?>\n' +
-             '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">\n' +
-             ' <s:Body>\n' +
-             '  <u:getVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1">\n' +
-             '   <InstanceID>0</InstanceID>' + 
-             '   <Channel>Master</Channel>\n' +
-             '  </u:getVolume>\n' +
-             ' </s:Body>\n' +
-             '</s:Envelope>\n';
-
-    let getRequest = {
-        host: self.HOST,
-        port: 1900,
-        path: path,
-        timeout: 1000,
-        method: "GET",
-        headers: {
-            'Content-Length': body.length,
-            'Content-Type': 'text/xml; charset="utf-8"',
-            'User-Agent': 'net.thlabs.nodecontrol',
-            'SOAPACTION': '"urn:schemas-upnp-org:service:RenderingControl:1#getVolume"'
-        }
+    var getRequest = {
+        host: this.HOST,
+        port: 55000,
+        path: '/nrc/control_0',
+        method: 'GET'
     };
 
-    var timedOut = false;
-    let request = http.request(getRequest, result => {
-        self.log("Getting power status...");
+    var request = http.request(getRequest, result => {
+        this.log("Getting TV power status...");
 
-        result.setEncoding('utf8');
-
-        result.on('data', data => {
-            self.log("Response recieved: " + data);
-        });
-        result.on('end', () => {
-            self.log("Responded, TV is on.");
+        if (result.statusCode == 403) {
+            this.log("TV is on.");
             callback(null, true);
-        });
+        } else {
+            this.log("TV is off.");
+            callback(null, false);
+        }
     });
 
-    request.on('timeout', () => {
-        self.log("Did not respond. TV is off.");
-        request.abort();
-        timedOut = true;
+    request.setTimeout(3000, function() {
+        this.abort();
     });
 
     request.on('error', error => {
-        if (!timedOut) {
-            callback(null, false);
-        } else {
-            callback(error, false);
-        }
+        this.log("Error: " + error.message);
+        callback(null, false);
     });
 
     request.end();
 }
 
 PanasonicTV.prototype.setOn = function(isOn, callback) {
-    let self = this;
-
     if (isOn) {
-        self.log("Attempting power on...");
-        self.tv.sendCommand("POWER");
+        this.log("Attempting power on...");
+        this.tv.sendCommand("POWER");
         callback(null, !isOn);
     } else {
-        self.log("Attempting power off...");
-        self.tv.sendCommand("POWER");
+        this.log("Attempting power off...");
+        this.tv.sendCommand("POWER");
         callback(null, !isOn);
     }
 }
