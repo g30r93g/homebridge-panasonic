@@ -1,7 +1,10 @@
 # Homebridge plugin for Panasonic TV's.
 A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit TV accessory.
 
-🚧 This is a work in progress and still has a few issues. 🚧
+✅ Power on/off
+✅ TV Accessory (none of that light switch business)
+❌ Input switching (coming soon though so watch the space!)
+❌ Remote Control (will hopefully come soon, maybe one of you can submit a PR 😉)
 
 ## Minimum Requirements
   1. iOS 12.2
@@ -11,8 +14,6 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit
   1. Install homebridge -> http://homebridge.io
   2. Install this plugin: `sudo npm install -g homebridge-panasonic-viera-tv`
   3. Change your config.json file
-  
-  Note: You may also need to install viera.js: `sudo npm install -g viera.js`
 
 ## Sample Config
   ``` JSON

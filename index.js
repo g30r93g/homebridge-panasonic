@@ -1,5 +1,5 @@
 var PanasonicCommands = require('viera.js');
-var http = require('http');
+var upnpSub = require('node-upnp-subscription');
 var Service, Characteristic;
 
 module.exports = function(homebridge) {
@@ -40,8 +40,7 @@ PanasonicTV.prototype.getServices = function() {
     this.deviceInformation = new Service.AccessoryInformation();
     this.deviceInformation
         .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
-        .setCharacteristic(Characteristic.Model, "Unknown")
-        .setCharacteristic(Characteristic.SerialNumber, "Unknown");
+        .setCharacteristic(Characteristic.Model, "Viera")
 
     // Configure HomeKit TV Accessory
     this.tvService = new Service.Television(this.name, "Television");
@@ -58,7 +57,7 @@ PanasonicTV.prototype.getServices = function() {
         .on("set", this.sendRemoteControlKey.bind(this, remoteControl));
     
     // Configure HomeKit TV Accessory Inputs
-    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1)
+    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 2)
     this.tvService.getCharacteristic(Characteristic.ActiveIdentifier)
         .on("set", this.setInput.bind(this, inputs));
 
@@ -72,6 +71,7 @@ PanasonicTV.prototype.getServices = function() {
     // Configure Panasonic TV Commands
     this.tv = new PanasonicCommands(this.HOST);
 
+    // return [this.deviceInformation, this.tvService];
     return [this.deviceInformation, this.tvService, this.inputTV, this.inputHDMI1, this.inputHDMI2];
 }
 
@@ -99,55 +99,45 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     this.log("Switching input to " + switchingTo);
     if (desiredInput == 1) {
         this.tv.sendCommand("TV");
-        callback(null);
+        callback(null, desiredInput);
     } else if (desiredInput == 2 || desiredInput == 3) {
         // this.tv.sendHDMICommand("HDMI" + desiredInput);
-        callback(null);
+        callback(null, desiredInput);
     } else {
-        callback(null);
+        callback(null, desiredInput);
     }
 }
 
+// TV Power
 PanasonicTV.prototype.getOn = function(callback) {
-    var getRequest = {
-        host: this.HOST,
-        port: 55000,
-        path: '/nrc/control_0',
-        method: 'GET'
-    };
+    var powerStateSubscription = new upnpSub(this.HOST, 55000, '/nrc/event_0');
+    // powerStateSubscription.on('message', console.log);
+    powerStateSubscription.on('message', message => {
+        let screenState = message.body['e:propertyset']['e:property'][2]['X_ScreenState'];
+        console.log(screenState);
 
-    var request = http.request(getRequest, result => {
-        this.log("Getting TV power status...");
-
-        if (result.statusCode == 403) {
-            this.log("TV is on.");
-            callback(null, true);
+        if (screenState == 'on') {
+            callback(null, true)
         } else {
-            this.log("TV is off.");
-            callback(null, false);
+            callback(null, false)
         }
     });
-
-    request.setTimeout(3000, function() {
-        this.abort();
+    powerStateSubscription.on('error', () => {
+        console.log('Couldn\'t subscribe. :(');
+        callback(null, false)
     });
 
-    request.on('error', error => {
-        this.log("Error: " + error.message);
-        callback(null, false);
-    });
-
-    request.end();
+    setTimeout(powerStateSubscription.unsubscribe, 1200);
 }
 
-PanasonicTV.prototype.setOn = function(isOn, callback) {
-    if (isOn) {
+PanasonicTV.prototype.setOn = function(isTurningOn, callback) {
+    if (isTurningOn) {
         this.log("Attempting power on...");
         this.tv.sendCommand("POWER");
-        callback(null, !isOn);
+        callback(null, !isTurningOn);
     } else {
         this.log("Attempting power off...");
         this.tv.sendCommand("POWER");
-        callback(null, !isOn);
+        callback(null, !isTurningOn);
     }
 }
