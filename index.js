@@ -8,8 +8,12 @@ module.exports = function(homebridge) {
     homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
 };
 
-// TV Inputs
-var inputs = [];
+const inputs = {
+    1: "HDMI 1",
+    2: "HDMI 2",
+    3: "HDMI 3",
+    4: "TV"
+};
 
 // TV Remote Control
 const remoteControl = {
@@ -29,13 +33,11 @@ function PanasonicTV(log, config) {
     this.config = config;
     this.name = config['name'];
     this.HOST = config['ipaddress'];
-    this.inputs = config['inputs'];
-    this.configuredInputs = [];
-
-    this.log(config['inputs']);
 };
 
 PanasonicTV.prototype.getServices = function() {
+    this.tv = new PanasonicCommands(this.HOST);
+
     // Configure HomeKit TV Device Information
     this.deviceInformation = new Service.AccessoryInformation();
     this.deviceInformation
@@ -45,84 +47,139 @@ PanasonicTV.prototype.getServices = function() {
         
     // Configure HomeKit TV Accessory
     this.tvService = new Service.Television(this.name, "Television");
-    this.tvService.setCharacteristic(Characteristic.ConfiguredName, this.name);
-    this.tvService.setCharacteristic(Characteristic.SleepDiscoveryMode, 1);
+    this.tvService
+        .setCharacteristic(Characteristic.ConfiguredName, this.name)
+        .setCharacteristic(Characteristic.SleepDiscoveryMode, 1);
   
     this.tvService.getCharacteristic(Characteristic.Active)
         .on("get", this.getOn.bind(this))
         .on("set", this.setOn.bind(this));
 
     // Configure HomeKit TV Accessory Remote Control
-    this.tvService
-        .getCharacteristic(Characteristic.RemoteKey)
-        .on("set", this.sendRemoteControlKey.bind(this, remoteControl));
+    // this.tvService
+    //     .getCharacteristic(Characteristic.RemoteKey)
+    //     .on("set", this.remoteControl.bind(this));
+    
+    // Configure HomeKit TV Volume Control
+    this.speakerService = new Service.TelevisionSpeaker(this.name + " Volume", "volumeService");
+
+    this.speakerService
+        .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
+        .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
+    
+    this.speakerService
+        .getCharacteristic(Characteristic.VolumeSelector)
+        .on('set', (newValue, callback) => {
+            this.tv.setVolume(newValue);
+            callback(null, newValue);
+        });
+
+    this.speakerService
+        .getCharacteristic(Characteristic.Mute)
+        .on('get', this.getMute.bind(this))
+        .on('set', this.setMute.bind(this));
+
+    this.speakerService
+        .addCharacteristic(Characteristic.Volume)
+        .on('get', this.getVolume.bind(this))
+        .on('set', this.setVolume.bind(this));
+
+  this.tvService.addLinkedService(this.speakerService);
     
     // Configure HomeKit TV Accessory Inputs
-    this.inputs.forEach(input => {
-        this.log("Adding " + input.name);
-        this.log(input);
-        var newInput = createInputSource(input.name, input.number, input.type);
-
-        this.configuredInputs.push(newInput);
-    });
-    
-    this.tvService.setCharacteristic(Characteristic.ActiveIdentifier, 1)
     this.tvService.getCharacteristic(Characteristic.ActiveIdentifier)
         .on("set", this.setInput.bind(this, inputs));
 
+    this.inputHDMI1 = this.createInputSource("hdmi1", "HDMI 1", 1, Characteristic.InputSourceType.HDMI);
+    this.inputHDMI2 = this.createInputSource("hdmi2", "HDMI 2", 2, Characteristic.InputSourceType.HDMI);
+    this.inputHDMI3 = this.createInputSource("hdmi3", "HDMI 3", 3, Characteristic.InputSourceType.HDMI);
+    this.inputTV = this.createInputSource("tv", "TV", 4, Characteristic.InputSourceType.TUNER);
+    this.tvService.addLinkedService(this.inputHDMI1);
+    this.tvService.addLinkedService(this.inputHDMI2);
+    this.tvService.addLinkedService(this.inputHDMI3);
+    this.tvService.addLinkedService(this.inputTV);
 
-    this.tv = new PanasonicCommands(this.HOST);
+    return [this.deviceInformation, this.tvService, this.speakerService, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputTV];
+}
 
-    return [this.deviceInformation, this.tvService] + this.configuredInputs;
+
+// TV Speaker
+PanasonicTV.prototype.getMute = function(callback) {
+    this.tv.getMute(status => {
+        this.log("Mute status: " + status);
+        callback(null, status);
+    });
+}
+
+PanasonicTV.prototype.setMute = function(value, callback) {
+    this.tv.setMute(!value);
+    callback(null, !value);
+}
+
+PanasonicTV.prototype.getVolume = function(callback) {
+    this.tv.getVolume(volume => { 
+        this.log("Volume status: " + volume);
+        callback(null, volume);
+    });
+}
+
+PanasonicTV.prototype.setVolume = function(value, callback) {
+    this.tv.setVolume(value);
+    callback(null, value);
 }
 
 // TV Remote Control
-PanasonicTV.prototype.sendRemoteControlKey = function(remoteControlMap, selected, callback) {
-    let buttonSelected = remoteControlMap[selected];
-    this.log("Selected " + buttonSelected);
-    this.tv.sendCommand(buttonSelected);
-    callback(null);
-}
+// PanasonicTV.prototype.remoteControl = function(keyCmd, callback) {
+//     this.log("Remote Control Key Action: " + keyCmd);
+    
+//     switch (keyCmd) {
+//         case Characteristic.RemoteKey.REWIND:
+//             this.tv.sendCommand("REW");
+//         case Characteristic.RemoteKey.FAST_FORWARD:
+//             this.tv.sendCommand("FF");
+//         case Characteristic.RemoteKey.NEXT_TRACK:
+//             this.tv.sendCommand("SKIP_NEXT");
+//         case Characteristic.RemoteKey.PREVIOUS_TRACK:
+//             this.tv.sendCommand("SKIP_PREV");
+//         case Characteristic.RemoteKey.ARROW_UP:
+//             this.tv.sendCommand("UP");
+//         case Characteristic.RemoteKey.ARROW_DOWN:
+//             this.tv.sendCommand("DOWN");
+//         case Characteristic.RemoteKey.ARROW_LEFT:
+//             this.tv.sendCommand("LEFT");
+//         case Characteristic.RemoteKey.ARROW_RIGHT:
+//             this.tv.sendCommand("RIGHT");
+//         case Characteristic.RemoteKey.SELECT:
+//             this.tv.sendCommand("ENTER");
+//         case Characteristic.RemoteKey.BACK:
+//             this.tv.sendCommand("RETURN");
+//         case Characteristic.RemoteKey.EXIT:
+//             this.tv.sendCommand("CANCEL");
+//         case Characteristic.RemoteKey.PLAY_PAUSE:
+//             this.tv.sendCommand("PAUSE");
+//         case Characteristic.RemoteKey.INFORMATION:
+//             this.tv.sendCommand("SUBMENU");
+//     }
+// }
 
 // TV Inputs
-function createInputSource(name, number, type) {
-    var input = new Service.InputSource(name.replace(' ', '_').toLowerCase(), name);
+PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
+    var input = new Service.InputSource(id, number);
     input
-      .setCharacteristic(Characteristic.Identifier, number)
-      .setCharacteristic(Characteristic.ConfiguredName, name)
-      .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-      .setCharacteristic(Characteristic.InputSourceType, determineInputType(type));
+        .setCharacteristic(Characteristic.Identifier, number)
+        .setCharacteristic(Characteristic.ConfiguredName, name)
+        .setCharacteristic(Characteristic.InputSourceType, type)
+        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED);
+
     return input;
 }
 
-function determineInputType(type) {
-    switch (type) {
-        case "HDMI":
-            return Characteristic.InputSourceType.HDMI
-        case "TV":
-            return Characteristic.InputSourceType.TUNER
-        case "AV":
-            return Characteristic.InputSourceType.COMPONENT_VIDEO
-        default:
-            return Characteristic.InputSourceType.OTHER
-    };
-}
-
 PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
-    var newInput = inputList[desiredInput];
+    var input = inputList[desiredInput].replace(" ", "");
 
-    this.log("Switching input to " + newInput.name);
-    
-    if (newInput.type == "HDMI") {
-        let hdmiNumber = newInput.name.substr(-1);
-        this.sendCommand("HDMI" + parseInt(hdmiNumber - 1));
-
-        callback(null, newInput.name);
-    } else {
-        this.sendCommand(newInput.name);
-
-        callback(null, newInput.name);
-    }
+    this.log("Switching input to " + input);
+    this.tv.sendCommand(input);
+    callback(null, input);
 }
 
 // TV Power
@@ -146,14 +203,14 @@ PanasonicTV.prototype.getOn = function(callback) {
     setTimeout(powerStateSubscription.unsubscribe, 1200);
 }
 
-PanasonicTV.prototype.setOn = function(isTurningOn, callback) {
-    if (isTurningOn) {
-        this.log("Attempting power on...");
+PanasonicTV.prototype.setOn = function(turnOn, callback) {
+    if (turnOn) {
+        this.log("Powering TV on...");
         this.tv.sendCommand("POWER");
-        callback(null, !isTurningOn);
+        callback(null, !turnOn);
     } else {
-        this.log("Attempting power off...");
+        this.log("Powering TV off...");
         this.tv.sendCommand("POWER");
-        callback(null, !isTurningOn);
+        callback(null, !turnOn);
     }
 }
