@@ -12,19 +12,11 @@ const inputs = {
     1: "HDMI 1",
     2: "HDMI 2",
     3: "HDMI 3",
-    4: "TV"
-};
-
-// TV Remote Control
-const remoteControl = {
-    1: "up",
-    2: "down",
-    3: "left",
-    4: "right",
-    5: "enter",
-    6: "home", 
-    7: "play",
-    8: "pause"
+    4: "TV",
+    5: "Netflix",
+    6: "Prime Video",
+    7: "Plex",
+    8: "YouTube"
 };
 
 // Configure TV
@@ -56,9 +48,9 @@ PanasonicTV.prototype.getServices = function() {
         .on("set", this.setOn.bind(this));
 
     // Configure HomeKit TV Accessory Remote Control
-    // this.tvService
-    //     .getCharacteristic(Characteristic.RemoteKey)
-    //     .on("set", this.remoteControl.bind(this));
+    this.tvService
+        .getCharacteristic(Characteristic.RemoteKey)
+        .on("set", this.remoteControl.bind(this));
     
     // Configure HomeKit TV Volume Control
     this.speakerService = new Service.TelevisionSpeaker(this.name + " Volume", "volumeService");
@@ -84,7 +76,7 @@ PanasonicTV.prototype.getServices = function() {
         .on('get', this.getVolume.bind(this))
         .on('set', this.setVolume.bind(this));
 
-  this.tvService.addLinkedService(this.speakerService);
+    this.tvService.addLinkedService(this.speakerService);
     
     // Configure HomeKit TV Accessory Inputs
     this.tvService.getCharacteristic(Characteristic.ActiveIdentifier)
@@ -94,12 +86,20 @@ PanasonicTV.prototype.getServices = function() {
     this.inputHDMI2 = this.createInputSource("hdmi2", "HDMI 2", 2, Characteristic.InputSourceType.HDMI);
     this.inputHDMI3 = this.createInputSource("hdmi3", "HDMI 3", 3, Characteristic.InputSourceType.HDMI);
     this.inputTV = this.createInputSource("tv", "TV", 4, Characteristic.InputSourceType.TUNER);
+    this.inputNetflix = this.createInputSource("netflix", "Netflix", 5, Characteristic.InputSourceType.APPLICATION);
+    this.inputPrimeVideo = this.createInputSource("primeVideo", "Prime Video", 6, Characteristic.InputSourceType.APPLICATION);
+    this.inputPlex = this.createInputSource("plex", "Plex", 7, Characteristic.InputSourceType.APPLICATION);
+    this.inputYoutube = this.createInputSource("youtube", "YouTube", 8, Characteristic.InputSourceType.APPLICATION);
     this.tvService.addLinkedService(this.inputHDMI1);
     this.tvService.addLinkedService(this.inputHDMI2);
     this.tvService.addLinkedService(this.inputHDMI3);
     this.tvService.addLinkedService(this.inputTV);
+    this.tvService.addLinkedService(this.inputNetflix);
+    this.tvService.addLinkedService(this.inputPrimeVideo);
+    this.tvService.addLinkedService(this.inputPlex);
+    this.tvService.addLinkedService(this.inputYoutube);
 
-    return [this.deviceInformation, this.tvService, this.speakerService, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputTV];
+    return [this.deviceInformation, this.tvService, this.speakerService, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputTV, this.inputNetflix, this.inputPrimeVideo, this.inputPlex, this.inputYoutube];
 }
 
 
@@ -129,38 +129,52 @@ PanasonicTV.prototype.setVolume = function(value, callback) {
 }
 
 // TV Remote Control
-// PanasonicTV.prototype.remoteControl = function(keyCmd, callback) {
-//     this.log("Remote Control Key Action: " + keyCmd);
-    
-//     switch (keyCmd) {
-//         case Characteristic.RemoteKey.REWIND:
-//             this.tv.sendCommand("REW");
-//         case Characteristic.RemoteKey.FAST_FORWARD:
-//             this.tv.sendCommand("FF");
-//         case Characteristic.RemoteKey.NEXT_TRACK:
-//             this.tv.sendCommand("SKIP_NEXT");
-//         case Characteristic.RemoteKey.PREVIOUS_TRACK:
-//             this.tv.sendCommand("SKIP_PREV");
-//         case Characteristic.RemoteKey.ARROW_UP:
-//             this.tv.sendCommand("UP");
-//         case Characteristic.RemoteKey.ARROW_DOWN:
-//             this.tv.sendCommand("DOWN");
-//         case Characteristic.RemoteKey.ARROW_LEFT:
-//             this.tv.sendCommand("LEFT");
-//         case Characteristic.RemoteKey.ARROW_RIGHT:
-//             this.tv.sendCommand("RIGHT");
-//         case Characteristic.RemoteKey.SELECT:
-//             this.tv.sendCommand("ENTER");
-//         case Characteristic.RemoteKey.BACK:
-//             this.tv.sendCommand("RETURN");
-//         case Characteristic.RemoteKey.EXIT:
-//             this.tv.sendCommand("CANCEL");
-//         case Characteristic.RemoteKey.PLAY_PAUSE:
-//             this.tv.sendCommand("PAUSE");
-//         case Characteristic.RemoteKey.INFORMATION:
-//             this.tv.sendCommand("SUBMENU");
-//     }
-// }
+PanasonicTV.prototype.remoteControl = function(action, callback) {
+    this.log("Remote Control Key Action: " + action);
+
+    if (action == Characteristic.RemoteKey.REWIND) {
+        this.tv.sendCommand("REW");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.FAST_FORWARD) {
+        this.tv.sendCommand("FF");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.NEXT_TRACK) {
+        this.tv.sendCommand("SKIP_NEXT");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.PREVIOUS_TRACK) {
+        this.tv.sendCommand("SKIP_PREV");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.ARROW_UP) {
+        this.tv.sendCommand("UP");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.ARROW_DOWN) {
+        this.tv.sendCommand("DOWN");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.ARROW_LEFT) {
+        this.tv.sendCommand("LEFT");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.ARROW_RIGHT) {
+        this.tv.sendCommand("RIGHT");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.SELECT) {
+        this.tv.sendCommand("ENTER");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.BACK) {
+        this.tv.sendCommand("RETURN");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.EXIT) {
+        this.tv.sendCommand("CANCEL");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.PLAY_PAUSE) {
+        this.tv.sendCommand("PAUSE");
+        callback(null, action)
+    } else if (action == Characteristic.RemoteKey.INFORMATION) {
+        this.tv.sendCommand("SUBMENU");
+        callback(null, action)
+    } else {
+        callback("Error", null)
+    }
+}
 
 // TV Inputs
 PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
@@ -176,10 +190,24 @@ PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
 
 PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     var input = inputList[desiredInput].replace(" ", "");
+    this.log("Switching to " + input);
 
-    this.log("Switching input to " + input);
-    this.tv.sendCommand(input);
-    callback(null, input);
+    if (desiredInput == 5) { // Netflix
+        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0010000200000001" + '</X_LaunchKeyword>');
+        callback(null, input);
+    } else if (desiredInput == 6) { // Prime Video
+        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0010000100170001" + '</X_LaunchKeyword>');
+        callback(null, input);
+    } else if (desiredInput == 7) { // Plex
+        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0076010507000001" + '</X_LaunchKeyword>');
+        callback(null, input);
+    } else if (desiredInput == 8) { // Youtube
+        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0070000200170001" + '</X_LaunchKeyword>');
+        callback(null, input);
+    } else {
+        this.tv.sendCommand(input);
+        callback(null, input);
+    }
 }
 
 // TV Power
