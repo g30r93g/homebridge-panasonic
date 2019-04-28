@@ -5,7 +5,7 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit
 
 ✅ HomeKit TV Accessory (none of that light switch business)
 
-✅ Input switching (Currently has a preset list of inputs. You will be able to configure yourself soon.)
+✅ Input switching (Currently has a preset list of inputs. You will be able to configure them yourself soon.)
 
 ## Requirements
   1. iOS 12.2 or later
