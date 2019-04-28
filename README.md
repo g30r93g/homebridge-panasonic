@@ -16,6 +16,7 @@ For this plugin to work, there are a few settings your TV must have set to 'On':
   1. TV Remote
   2. Powered On by Apps
   3. Networked Standby
+
 Please note that not all Panasonic TV's are created equally and may not support power on from standby.
   
 ## Installation
