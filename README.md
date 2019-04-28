@@ -11,6 +11,13 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit
   1. iOS 12.2 or later
   2. Homebridge v0.4.46 or later
   
+## TV Configuration
+For this plugin to work, there are a few settings your TV must have set to 'On':
+  1. TV Remote
+  2. Powered On by Apps
+  3. Networked Standby
+Please note that not all Panasonic TV's are created equally and may not support power on from standby.
+  
 ## Installation
   1. Install homebridge -> http://homebridge.io
   2. Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv@4.1.0`
