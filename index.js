@@ -1,12 +1,7 @@
-var PanasonicCommands = require('viera.js');
-var upnpSub = require('node-upnp-subscription');
+var PanasonicCommands = require("viera.js-g30r93g");
+var upnpSub = require("node-upnp-subscription");
+var http = require("http");
 var Service, Characteristic;
-
-module.exports = function(homebridge) {
-    Service = homebridge.hap.Service;
-    Characteristic = homebridge.hap.Characteristic;
-    homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
-};
 
 const inputs = {
     1: "HDMI 1",
@@ -23,9 +18,15 @@ const inputs = {
 function PanasonicTV(log, config) {
     this.log = log;
     this.config = config;
-    this.name = config['name'];
-    this.HOST = config['ipaddress'];
-};
+    this.name = config["name"];
+    this.HOST = config["ipaddress"];
+}
+
+module.exports = function(homebridge) {
+    Service = homebridge.hap.Service;
+    Characteristic = homebridge.hap.Characteristic;
+    homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
+}
 
 PanasonicTV.prototype.getServices = function() {
     this.tv = new PanasonicCommands(this.HOST);
@@ -34,8 +35,10 @@ PanasonicTV.prototype.getServices = function() {
     this.deviceInformation = new Service.AccessoryInformation();
     this.deviceInformation
         .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
-        .setCharacteristic(Characteristic.Model, "Viera")
-        .setCharacteristic(Characteristic.SerialNumber, "Unavailable");
+        .setCharacteristic(Characteristic.SerialNumber, "Unavailable")
+        .setCharacteristic(Characteristic.Model, "Viera");
+
+    this.getDeviceInformation();
         
     // Configure HomeKit TV Accessory
     this.tvService = new Service.Television(this.name, "Television");
@@ -61,20 +64,20 @@ PanasonicTV.prototype.getServices = function() {
     
     this.speakerService
         .getCharacteristic(Characteristic.VolumeSelector)
-        .on('set', (newValue, callback) => {
+        .on("set", (newValue, callback) => {
             this.tv.setVolume(newValue);
             callback(null, newValue);
         });
 
     this.speakerService
         .getCharacteristic(Characteristic.Mute)
-        .on('get', this.getMute.bind(this))
-        .on('set', this.setMute.bind(this));
+        .on("get", this.getMute.bind(this))
+        .on("set", this.setMute.bind(this));
 
     this.speakerService
         .addCharacteristic(Characteristic.Volume)
-        .on('get', this.getVolume.bind(this))
-        .on('set', this.setVolume.bind(this));
+        .on("get", this.getVolume.bind(this))
+        .on("set", this.setVolume.bind(this));
 
     this.tvService.addLinkedService(this.speakerService);
     
@@ -102,10 +105,42 @@ PanasonicTV.prototype.getServices = function() {
     return [this.deviceInformation, this.tvService, this.speakerService, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputTV, this.inputNetflix, this.inputPrimeVideo, this.inputPlex, this.inputYoutube];
 }
 
+// TV Information
+PanasonicTV.prototype.getDeviceInformation = function() {
+    var getRequest = {
+        host: this.ipAddress,
+        path: "/nrc/ddd.xml",
+        port: 55000,
+        method: "GET"
+    };
+
+    var request = http.request(getRequest, (result) => {
+        result.setEncoding("utf8");
+        result.on("data", (data) => {
+            print("Data: " + data);
+
+            let model = data.body["root"]["device"]["modelNumber"];
+            // let serialNumber = data.body["root"]["device"]["serialNumber"]; <-- Doesn't exist???
+
+            if (model !== "") {
+                this.deviceInformation.setCharacteristic(Characteristic.Model).updateValue(model);
+            } else {
+                this.deviceInformation.setCharacteristic(Characteristic.Model, "Unavailable");
+            }
+        })
+    });
+
+    request.on('error', (error) => {
+        this.log("Error: " + error.message);
+        this.deviceInformation.setCharacteristic(Characteristic.Model, "Unavailable");
+    });
+
+    request.end();
+}
 
 // TV Speaker
 PanasonicTV.prototype.getMute = function(callback) {
-    this.tv.getMute(status => {
+    this.tv.getMute((status) => {
         this.log("Mute status: " + status);
         callback(null, status);
     });
@@ -117,7 +152,7 @@ PanasonicTV.prototype.setMute = function(value, callback) {
 }
 
 PanasonicTV.prototype.getVolume = function(callback) {
-    this.tv.getVolume(volume => { 
+    this.tv.getVolume((volume) => { 
         this.log("Volume status: " + volume);
         callback(null, volume);
     });
@@ -130,50 +165,38 @@ PanasonicTV.prototype.setVolume = function(value, callback) {
 
 // TV Remote Control
 PanasonicTV.prototype.remoteControl = function(action, callback) {
-    this.log("Remote Control Key Action: " + action);
+    this.log("Remote Control Action: " + action);
 
-    if (action == Characteristic.RemoteKey.REWIND) {
-        this.tv.sendCommand("REW");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.FAST_FORWARD) {
-        this.tv.sendCommand("FF");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.NEXT_TRACK) {
-        this.tv.sendCommand("SKIP_NEXT");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.PREVIOUS_TRACK) {
-        this.tv.sendCommand("SKIP_PREV");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.ARROW_UP) {
-        this.tv.sendCommand("UP");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.ARROW_DOWN) {
-        this.tv.sendCommand("DOWN");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.ARROW_LEFT) {
-        this.tv.sendCommand("LEFT");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.ARROW_RIGHT) {
-        this.tv.sendCommand("RIGHT");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.SELECT) {
-        this.tv.sendCommand("ENTER");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.BACK) {
-        this.tv.sendCommand("RETURN");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.EXIT) {
-        this.tv.sendCommand("CANCEL");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.PLAY_PAUSE) {
-        this.tv.sendCommand("PAUSE");
-        callback(null, action)
-    } else if (action == Characteristic.RemoteKey.INFORMATION) {
-        this.tv.sendCommand("SUBMENU");
-        callback(null, action)
-    } else {
-        callback("Error", null)
+    switch (action) {
+        case Characteristic.RemoteKey.REWIND:
+            this.tv.sendCommand("REW");
+        case Characteristic.RemoteKey.FAST_FORWARD:
+            this.tv.sendCommand("FF");
+        case Characteristic.RemoteKey.NEXT_TRACK:
+            this.tv.sendCommand("SKIP_NEXT");
+        case Characteristic.RemoteKey.PREVIOUS_TRACK:
+            this.tv.sendCommand("SKIP_PREV");
+        case Characteristic.RemoteKey.ARROW_UP:
+            this.tv.sendCommand("UP");
+        case Characteristic.RemoteKey.ARROW_DOWN:
+            this.tv.sendCommand("DOWN");
+        case Characteristic.RemoteKey.ARROW_RIGHT:
+            this.tv.sendCommand("RIGHT");
+        case Characteristic.RemoteKey.SELECT:
+            this.tv.sendCommand("RIGHT");
+        case Characteristic.RemoteKey.BACK:
+            this.tv.sendCommand("RETURN");
+        case Characteristic.RemoteKey.EXIT:
+            this.tv.sendCommand("CANCEL");
+        case Characteristic.RemoteKey.PLAY_PAUSE:
+            this.tv.sendCommand("PAUSE");
+        case Characteristic.RemoteKey.INFORMATION:
+            this.tv.sendCommand("SUBMENU");
+        default:
+            callback("Error", null);
     }
+
+    callback(null, action);
 }
 
 // TV Inputs
@@ -191,44 +214,44 @@ PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
 PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     var input = inputList[desiredInput].replace(" ", "");
     this.log("Switching to " + input);
-
-    if (desiredInput == 5) { // Netflix
-        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0010000200000001" + '</X_LaunchKeyword>');
-        callback(null, input);
-    } else if (desiredInput == 6) { // Prime Video
-        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0010000100170001" + '</X_LaunchKeyword>');
-        callback(null, input);
-    } else if (desiredInput == 7) { // Plex
-        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0076010507000001" + '</X_LaunchKeyword>');
-        callback(null, input);
-    } else if (desiredInput == 8) { // Youtube
-        this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0070000200170001" + '</X_LaunchKeyword>');
-        callback(null, input);
-    } else {
-        this.tv.sendCommand(input);
-        callback(null, input);
+    
+    switch (desiredInput) {
+        case 5: // Netflix
+            this.tv.sendAppCommand(0010000200000001);
+        case 6: // Prime Video
+            this.tv.sendAppCommand(0010000100170001);
+        case 7: // Plex
+            this.tv.sendAppCommand(0076010507000001);
+        case 8: // Youtube
+            this.tv.sendAppCommand(0070000200170001);
+        default:
+            this.tv.sendCommand(input);
     }
+
+    callback(null, input);
 }
 
 // TV Power
 PanasonicTV.prototype.getOn = function(callback) {
-    var powerStateSubscription = new upnpSub(this.HOST, 55000, '/nrc/event_0');
-    powerStateSubscription.on('message', message => {
-        let screenState = message.body['e:propertyset']['e:property'][2]['X_ScreenState'];
+    var PowerStateSubscription = new upnpSub(this.HOST, 55000, "/nrc/event_0");
+
+    PowerStateSubscription.on("message", (message) => {
+        let screenState = message.body["e:propertyset"]["e:property"][2]["X_ScreenState"];
         this.log("TV is " + screenState);
 
-        if (screenState == 'on') {
+        if (screenState == "on") {
             callback(null, true);
         } else {
             callback(null, false);
-        }
+        };
     });
-    powerStateSubscription.on('error', () => {
-        this.log('Couldn\'t subscribe. Please check your TV\'s network connection.');
+
+    PowerStateSubscription.on("error", () => {
+        this.log("Couldn\'t check power state. Please check your TV\'s network connection.");
         callback(null, false);
     });
 
-    setTimeout(powerStateSubscription.unsubscribe, 1200);
+    setTimeout(PowerStateSubscription.unsubscribe, 1200);
 }
 
 PanasonicTV.prototype.setOn = function(turnOn, callback) {
