@@ -1,5 +1,7 @@
 # Homebridge plugin for Panasonic TV's
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/313c17eb1c1145f085e7ecc1ce1c993e)](https://app.codacy.com/app/g30r93g/homebridge-panasonic?utm_source=github.com&utm_medium=referral&utm_content=g30r93g/homebridge-panasonic&utm_campaign=Badge_Grade_Dashboard)
+
 A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit TV accessory.
 
 ✅ Power on/off
