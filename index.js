@@ -202,19 +202,19 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     switch (desiredInput) {
         case 5: // Netflix
             // this.tv.sendAppCommand("0010000200000001");
-            this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0010000200000001" + '</X_LaunchKeyword>');
+            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0010000200000001</X_LaunchKeyword>");
             break;
         case 6: // Prime Video
             // this.tv.sendAppCommand("0010000100170001");
-            this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0010000100170001" + '</X_LaunchKeyword>');
+            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0010000100170001</X_LaunchKeyword>");
             break;
         case 7: // Plex
             // this.tv.sendAppCommand("0076010507000001");
-            this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0076010507000001" + '</X_LaunchKeyword>');
+            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0076010507000001</X_LaunchKeyword>");
             break;
         case 8: // YouTube
             // this.tv.sendAppCommand("0070000200170001");
-            this.tv.sendRequest('command', 'X_LaunchApp', '<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=' + "0070000200170001" + '</X_LaunchKeyword>');
+            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0070000200170001</X_LaunchKeyword>");
             break;
         default:
             this.tv.sendCommand(input);
