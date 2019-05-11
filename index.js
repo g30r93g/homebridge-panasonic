@@ -173,12 +173,12 @@ PanasonicTV.prototype.remoteControl = function(action, callback) {
             this.tv.sendCommand("CANCEL");
             break;
         case 11: // Play / Pause
-            this.tv.sendCommand("PAUSE");
+            this.tv.sendCommand("PLAY");
             break;
         case 15: // Information
-            this.tv.sendCommand("SUBMENU");
+            this.tv.sendCommand("HOME");
             break;
-    };
+    }
 
     callback(null, action);
 };
