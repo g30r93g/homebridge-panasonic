@@ -139,46 +139,46 @@ PanasonicTV.prototype.remoteControl = function(action, callback) {
     this.log("Remote Control Action: " + action);
 
     switch (action) {
-        case Characteristic.RemoteKey.REWIND:
+        case 0: // Rewind
             this.tv.sendCommand("REW");
             break;
-        case Characteristic.RemoteKey.FAST_FORWARD:
+        case 1: // Fast Forward
             this.tv.sendCommand("FF");
             break;
-        case Characteristic.RemoteKey.NEXT_TRACK:
+        case 2: // Next Track
             this.tv.sendCommand("SKIP_NEXT");
             break;
-        case Characteristic.RemoteKey.PREVIOUS_TRACK:
+        case 3: // Previous Track
             this.tv.sendCommand("SKIP_PREV");
             break;
-        case Characteristic.RemoteKey.ARROW_UP:
+        case 4: // Up Arrow
             this.tv.sendCommand("UP");
             break;
-        case Characteristic.RemoteKey.ARROW_DOWN:
+        case 5: // Down Arrow
             this.tv.sendCommand("DOWN");
             break;
-        case Characteristic.RemoteKey.ARROW_RIGHT:
+        case 6: // Left Arrow
+            this.tv.sendCommand("LEFT");
+            break;
+        case 7: // Right Arrow
             this.tv.sendCommand("RIGHT");
             break;
-        case Characteristic.RemoteKey.SELECT:
-            this.tv.sendCommand("RIGHT");
+        case 8: // Select
+            this.tv.sendCommand("ENTER");
             break;
-        case Characteristic.RemoteKey.BACK:
+        case 9: // Back
             this.tv.sendCommand("RETURN");
             break;
-        case Characteristic.RemoteKey.EXIT:
+        case 10: // Exit
             this.tv.sendCommand("CANCEL");
             break;
-        case Characteristic.RemoteKey.PLAY_PAUSE:
+        case 11: // Play / Pause
             this.tv.sendCommand("PAUSE");
             break;
-        case Characteristic.RemoteKey.INFORMATION:
+        case 15: // Information
             this.tv.sendCommand("SUBMENU");
             break;
-        default:
-            callback("Error", null);
-            break;
-    }
+    };
 
     callback(null, action);
 };
