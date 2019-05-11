@@ -21,7 +21,7 @@ function PanasonicTV(log, config) {
         this.name = config["name"];
         this.HOST = config["ipaddress"];
     } else {
-        this.log("No configuration found. Please add configuration in config.json")
+        this.log("No configuration found. Please add configuration in config.json");
         return;
     }
 }
