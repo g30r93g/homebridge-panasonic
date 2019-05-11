@@ -104,7 +104,7 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.addLinkedService(this.inputPlex);
     this.tvService.addLinkedService(this.inputYoutube);
 
-    this.log("Initialization complete.");
+    this.log("Initialization complete");
 
     return [this.deviceInformation, this.tvService, this.speakerService, this.inputTV, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputNetflix, this.inputPrimeVideo, this.inputPlex, this.inputYoutube];
 };
