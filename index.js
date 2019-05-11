@@ -127,7 +127,7 @@ PanasonicTV.prototype.getDeviceInformation = function() {
             } else {
                 this.deviceInformation.setCharacteristic(Characteristic.Model, "Unavailable");
             }
-        })
+        });
     });
 
     request.on('error', (error) => {
@@ -170,30 +170,43 @@ PanasonicTV.prototype.remoteControl = function(action, callback) {
     switch (action) {
         case Characteristic.RemoteKey.REWIND:
             this.tv.sendCommand("REW");
+            break;
         case Characteristic.RemoteKey.FAST_FORWARD:
             this.tv.sendCommand("FF");
+            break;
         case Characteristic.RemoteKey.NEXT_TRACK:
             this.tv.sendCommand("SKIP_NEXT");
+            break;
         case Characteristic.RemoteKey.PREVIOUS_TRACK:
             this.tv.sendCommand("SKIP_PREV");
+            break;
         case Characteristic.RemoteKey.ARROW_UP:
             this.tv.sendCommand("UP");
+            break;
         case Characteristic.RemoteKey.ARROW_DOWN:
             this.tv.sendCommand("DOWN");
+            break;
         case Characteristic.RemoteKey.ARROW_RIGHT:
             this.tv.sendCommand("RIGHT");
+            break;
         case Characteristic.RemoteKey.SELECT:
             this.tv.sendCommand("RIGHT");
+            break;
         case Characteristic.RemoteKey.BACK:
             this.tv.sendCommand("RETURN");
+            break;
         case Characteristic.RemoteKey.EXIT:
             this.tv.sendCommand("CANCEL");
+            break;
         case Characteristic.RemoteKey.PLAY_PAUSE:
             this.tv.sendCommand("PAUSE");
+            break;
         case Characteristic.RemoteKey.INFORMATION:
             this.tv.sendCommand("SUBMENU");
+            break;
         default:
             callback("Error", null);
+            break;
     }
 
     callback(null, action);
@@ -218,14 +231,19 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     switch (desiredInput) {
         case 5: // Netflix
             this.tv.sendAppCommand("0010000200000001");
+            break;
         case 6: // Prime Video
             this.tv.sendAppCommand("0010000100170001");
+            break;
         case 7: // Plex
             this.tv.sendAppCommand("0076010507000001");
+            break;
         case 8: // Youtube
             this.tv.sendAppCommand("0070000200170001");
+            break;
         default:
             this.tv.sendCommand(input);
+            break;
     }
 
     callback(null, input);
@@ -243,7 +261,7 @@ PanasonicTV.prototype.getOn = function(callback) {
             callback(null, true);
         } else {
             callback(null, false);
-        };
+        }
     });
 
     PowerStateSubscription.on("error", () => {
@@ -264,4 +282,4 @@ PanasonicTV.prototype.setOn = function(turnOn, callback) {
         this.tv.sendCommand("POWER");
         callback(null, !turnOn);
     }
-}
+};
