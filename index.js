@@ -20,7 +20,7 @@ function PanasonicTV(log, config) {
     this.config = config;
     this.name = config["name"];
     this.HOST = config["ipaddress"];
-};
+}
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
