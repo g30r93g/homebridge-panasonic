@@ -1,5 +1,5 @@
 var PanasonicCommands = require("viera.js-g30r93g");
-var upnpSub = require("node-upnp-subscription");
+var UpnpSub = require("node-upnp-subscription");
 var http = require("http");
 var Service, Characteristic;
 
@@ -130,7 +130,7 @@ PanasonicTV.prototype.getDeviceInformation = function() {
         });
     });
 
-    request.on('error', (error) => {
+    request.on("error", (error) => {
         this.log("Error: " + error.message);
         this.deviceInformation.setCharacteristic(Characteristic.Model, "Unavailable");
     });
@@ -225,7 +225,7 @@ PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
 }
 
 PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
-    var input = inputList[desiredInput].replace(" ", "");
+    let input = inputList[desiredInput].replace(" ", "");
     this.log("Switching to " + input);
     
     switch (desiredInput) {
@@ -251,25 +251,25 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
 
 // TV Power
 PanasonicTV.prototype.getOn = function(callback) {
-    var PowerStateSubscription = new upnpSub(this.HOST, 55000, "/nrc/event_0");
+    var powerStateSubscription = new UpnpSub(this.HOST, 55000, "/nrc/event_0");
 
-    PowerStateSubscription.on("message", (message) => {
+    powerStateSubscription.on("message", (message) => {
         let screenState = message.body["e:propertyset"]["e:property"][2]["X_ScreenState"];
         this.log("TV is " + screenState);
 
-        if (screenState == "on") {
+        if (screenState === "on") {
             callback(null, true);
         } else {
             callback(null, false);
         }
     });
 
-    PowerStateSubscription.on("error", () => {
+    powerStateSubscription.on("error", () => {
         this.log("Couldn\'t check power state. Please check your TV\'s network connection.");
         callback(null, false);
     });
 
-    setTimeout(PowerStateSubscription.unsubscribe, 1200);
+    setTimeout(powerStateSubscription.unsubscribe, 1200);
 }
 
 PanasonicTV.prototype.setOn = function(turnOn, callback) {
