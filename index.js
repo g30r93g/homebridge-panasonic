@@ -217,13 +217,13 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     
     switch (desiredInput) {
         case 5: // Netflix
-            this.tv.sendAppCommand(0010000200000001);
+            this.tv.sendAppCommand("0010000200000001");
         case 6: // Prime Video
-            this.tv.sendAppCommand(0010000100170001);
+            this.tv.sendAppCommand("0010000100170001");
         case 7: // Plex
-            this.tv.sendAppCommand(0076010507000001);
+            this.tv.sendAppCommand("0076010507000001");
         case 8: // Youtube
-            this.tv.sendAppCommand(0070000200170001);
+            this.tv.sendAppCommand("0070000200170001");
         default:
             this.tv.sendCommand(input);
     }
