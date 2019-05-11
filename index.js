@@ -20,13 +20,13 @@ function PanasonicTV(log, config) {
     this.config = config;
     this.name = config["name"];
     this.HOST = config["ipaddress"];
-}
+};
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
     homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
-}
+};
 
 PanasonicTV.prototype.getServices = function() {
     this.tv = new PanasonicCommands(this.HOST);
@@ -103,7 +103,7 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.addLinkedService(this.inputYoutube);
 
     return [this.deviceInformation, this.tvService, this.speakerService, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputTV, this.inputNetflix, this.inputPrimeVideo, this.inputPlex, this.inputYoutube];
-}
+};
 
 // TV Information
 PanasonicTV.prototype.getDeviceInformation = function() {
@@ -136,7 +136,7 @@ PanasonicTV.prototype.getDeviceInformation = function() {
     });
 
     request.end();
-}
+};
 
 // TV Speaker
 PanasonicTV.prototype.getMute = function(callback) {
@@ -144,24 +144,24 @@ PanasonicTV.prototype.getMute = function(callback) {
         this.log("Mute status: " + status);
         callback(null, status);
     });
-}
+};
 
 PanasonicTV.prototype.setMute = function(value, callback) {
     this.tv.setMute(!value);
     callback(null, !value);
-}
+};
 
 PanasonicTV.prototype.getVolume = function(callback) {
     this.tv.getVolume((volume) => { 
         this.log("Volume status: " + volume);
         callback(null, volume);
     });
-}
+};
 
 PanasonicTV.prototype.setVolume = function(value, callback) {
     this.tv.setVolume(value);
     callback(null, value);
-}
+};
 
 // TV Remote Control
 PanasonicTV.prototype.remoteControl = function(action, callback) {
@@ -210,7 +210,7 @@ PanasonicTV.prototype.remoteControl = function(action, callback) {
     }
 
     callback(null, action);
-}
+};
 
 // TV Inputs
 PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
@@ -222,7 +222,7 @@ PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
         .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED);
 
     return input;
-}
+};
 
 PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     let input = inputList[desiredInput].replace(" ", "");
@@ -247,7 +247,7 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     }
 
     callback(null, input);
-}
+};
 
 // TV Power
 PanasonicTV.prototype.getOn = function(callback) {
@@ -270,7 +270,7 @@ PanasonicTV.prototype.getOn = function(callback) {
     });
 
     setTimeout(powerStateSubscription.unsubscribe, 1200);
-}
+};
 
 PanasonicTV.prototype.setOn = function(turnOn, callback) {
     if (turnOn) {
