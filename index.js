@@ -104,7 +104,7 @@ PanasonicTV.prototype.getServices = function() {
     this.tvService.addLinkedService(this.inputPlex);
     this.tvService.addLinkedService(this.inputYoutube);
 
-    this.log("Initialization complete");
+    this.log("Initialization complete.");
 
     return [this.deviceInformation, this.tvService, this.speakerService, this.inputTV, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputNetflix, this.inputPrimeVideo, this.inputPlex, this.inputYoutube];
 };
@@ -240,7 +240,8 @@ PanasonicTV.prototype.getOn = function(callback) {
     });
 
     powerStateSubscription.on("error", () => {
-        this.log("Couldn\'t check power state. Please check your TV\'s network connection. This TV may not support power on.");
+        this.log("Couldn\'t check power state. Please check your TV\'s network connection.");
+        this.log("This TV may not support power on. Please check your TV's settings.")
         callback(null, false);
     });
 
