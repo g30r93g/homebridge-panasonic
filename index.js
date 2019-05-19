@@ -2,17 +2,6 @@ var PanasonicCommands = require("viera.js");
 var UpnpSub = require("node-upnp-subscription");
 var Service, Characteristic;
 
-var inputs = {
-    1: "TV",
-    2: "HDMI 1",
-    3: "HDMI 2",
-    4: "HDMI 3",
-    5: "Netflix",
-    6: "Prime Video",
-    7: "Plex",
-    8: "YouTube"
-};
-
 // Configure TV
 function PanasonicTV(log, config) {
     this.log = log;
@@ -20,7 +9,12 @@ function PanasonicTV(log, config) {
         this.config = config;
         this.name = config["name"];
         this.HOST = config["ipaddress"];
-        inputs = JSON.parse(config["inputs"]);
+    
+        if (!config["inputs"]) {
+            this.inputs = [];
+        } else {
+            this.inputs = config["inputs"];
+        }
     } else {
         this.log("No configuration found. Please add configuration in config.json");
         return;
@@ -34,6 +28,7 @@ module.exports = function(homebridge) {
 };
 
 PanasonicTV.prototype.getServices = function() {
+    var services = [];
     this.tv = new PanasonicCommands(this.HOST);
 
     // Configure HomeKit TV Device Information
@@ -86,28 +81,18 @@ PanasonicTV.prototype.getServices = function() {
     
     // Configure HomeKit TV Accessory Inputs
     this.tvService.getCharacteristic(Characteristic.ActiveIdentifier)
-        .on("set", this.setInput.bind(this, inputs));
+        .on("set", this.setInput.bind(this, this.inputs));
 
-    this.inputTV = this.createInputSource("tv", "TV", 4, Characteristic.InputSourceType.TUNER);
-    this.inputHDMI1 = this.createInputSource("hdmi1", "HDMI 1", 1, Characteristic.InputSourceType.HDMI);
-    this.inputHDMI2 = this.createInputSource("hdmi2", "HDMI 2", 2, Characteristic.InputSourceType.HDMI);
-    this.inputHDMI3 = this.createInputSource("hdmi3", "HDMI 3", 3, Characteristic.InputSourceType.HDMI);
-    this.inputNetflix = this.createInputSource("netflix", "Netflix", 5, Characteristic.InputSourceType.APPLICATION);
-    this.inputPrimeVideo = this.createInputSource("primeVideo", "Prime Video", 6, Characteristic.InputSourceType.APPLICATION);
-    this.inputPlex = this.createInputSource("plex", "Plex", 7, Characteristic.InputSourceType.APPLICATION);
-    this.inputYoutube = this.createInputSource("youtube", "YouTube", 8, Characteristic.InputSourceType.APPLICATION);
-    this.tvService.addLinkedService(this.inputHDMI1);
-    this.tvService.addLinkedService(this.inputHDMI2);
-    this.tvService.addLinkedService(this.inputHDMI3);
-    this.tvService.addLinkedService(this.inputTV);
-    this.tvService.addLinkedService(this.inputNetflix);
-    this.tvService.addLinkedService(this.inputPrimeVideo);
-    this.tvService.addLinkedService(this.inputPlex);
-    this.tvService.addLinkedService(this.inputYoutube);
+    var configuredInputs = this.setupInputs();
+    configuredInputs.forEach((input) => {
+        this.tvService.addLinkedService(input);
+        services.push(input);
+    });
 
-    this.log("Initialization complete.");
+    services.push(this.deviceInformation, this.tvService, this.speakerService);
 
-    return [this.deviceInformation, this.tvService, this.speakerService, this.inputTV, this.inputHDMI1, this.inputHDMI2, this.inputHDMI3, this.inputNetflix, this.inputPrimeVideo, this.inputPlex, this.inputYoutube];
+    this.log("Initialisation complete.");
+    return services;
 };
 
 // TV Speaker
@@ -185,8 +170,25 @@ PanasonicTV.prototype.remoteControl = function(action, callback) {
 };
 
 // TV Inputs
+PanasonicTV.prototype.setupInputs = function() {
+    var configuredInputs = [];
+    var counter = 1;
+
+    this.inputs.forEach((input) => {
+        let id = input.id;
+        let name = input.name;
+        let type = this.determineInputType(input.type);
+        this.log("Adding input " + counter + ": Name: " + name + ", Type: " + input.type);
+
+        configuredInputs.push(this.createInputSource(id, name, counter, type));
+        counter = counter + 1;
+    });
+
+    return configuredInputs;
+};
+
 PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
-    var input = new Service.InputSource(id, number);
+    var input = new Service.InputSource(id.toLowerCase().replace(" ", ""), name);
     input
         .setCharacteristic(Characteristic.Identifier, number)
         .setCharacteristic(Characteristic.ConfiguredName, name)
@@ -196,26 +198,27 @@ PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
     return input;
 };
 
-PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
-    let input = inputList[desiredInput].replace(" ", "");
-    this.log("Switching to " + input);
-    
-    switch (desiredInput) {
-        case 5: // Netflix
-            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0010000200000001</X_LaunchKeyword>");
-            break;
-        case 6: // Prime Video
-            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0010000100170001</X_LaunchKeyword>");
-            break;
-        case 7: // Plex
-            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0076010507000001</X_LaunchKeyword>");
-            break;
-        case 8: // YouTube
-            this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0070000200170001</X_LaunchKeyword>");
-            break;
+PanasonicTV.prototype.determineInputType = function(type) {
+    switch (type) {
+        case "TV":
+            return Characteristic.InputSourceType.TUNER;
+        case "HDMI":
+            return Characteristic.InputSourceType.HDMI;
+        case "APPLICATION":
+            return Characteristic.InputSourceType.APPLICATION;
         default:
-            this.tv.sendCommand(input);
-            break;
+            return Characteristic.InputSourceType.OTHER;
+    }
+};
+
+PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
+    let input = inputList[desiredInput - 1];
+    this.log("Switching input to " + input.name);
+
+    if (input.type == "APPLICATION") {
+        this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=" + input.appID + "</X_LaunchKeyword>");
+    } else {
+        this.tv.sendCommand(input.id.toLowerCase().replace(" ", ""));
     }
 
     callback(null, input);
@@ -227,7 +230,7 @@ PanasonicTV.prototype.getOn = function(callback) {
 
     powerStateSubscription.on("message", (message) => {
         let properties = message.body["e:propertyset"]["e:property"];
-        let screenState = properties.find(obj => obj.X_ScreenState)["X_ScreenState"];
+        let screenState = properties.find((obj) => obj.X_ScreenState)["X_ScreenState"];
         this.log("TV is " + screenState);
 
         if (screenState === "on") {

@@ -32,12 +32,36 @@ It is possible that the TV may not support power on by standby. To check this, i
 
 ## Sample Config
 
+Please configure the `inputs` section according to your input switching list and ensure that when using an application that the `appID` is included.
+
 ``` JSON
 "accessories": [
     {
         "accessory": "Panasonic-TV",
         "name": "YOUR_TV_NAME_HERE",
-        "ipaddress": "YOUR_TV_IP_ADDRESS_HERE"
+        "ipaddress": "YOUR_TV_IP_ADDRESS_HERE",
+        "inputs": [
+            {"id": "TV", "name": "TV", "type": "TV"},
+            {"id" : "HDMI 1", "name": "Apple TV", "type": "HDMI"},
+            {"id" : "HDMI 2", "name": "Fire TV Stick", "type": "HDMI"},
+            {"id" : "Netflix", "name": "Netflix", "type": "APPLICATION", "appID": "0010000200000001"}
+        ]
     }
 ]
 ```
+
+## App List
+
+This is a partial list of apps that are on Viera TV's. Make sure that if you're adding an app that it exists.
+I will update this list, though if you know any more, I'd appreciate you sending me these in an issue.
+
+* Netflix: `0010000200000001`
+* YouTube: `0070000200170001`
+* Amazon Prime Video: `0010000100170001`
+* BBC iPlayer: `0020000A00170010`
+* ITV Hub: `0387878700000124`
+* All 4: `0387878700000125`
+* Plex: `0076010507000001`
+* Rakuten TV: `0020002A00000001`
+* Calendar: `0387878700150020`
+* Browser: `0077777700160002`
