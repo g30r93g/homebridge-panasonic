@@ -27,7 +27,7 @@ It is possible that the TV may not support power on by standby. To check this, i
 ## Installation
 
 1.  Install homebridge -> <http://homebridge.io>
-2.  Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv@4.5.0`
+2.  Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv@6.0.1`
 3.  Update your config.json file
 
 ## Sample Config
