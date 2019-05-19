@@ -2,11 +2,11 @@ var PanasonicCommands = require("viera.js");
 var UpnpSub = require("node-upnp-subscription");
 var Service, Characteristic;
 
-const inputs = {
-    1: "HDMI 1",
-    2: "HDMI 2",
-    3: "HDMI 3",
-    4: "TV",
+var inputs = {
+    1: "TV",
+    2: "HDMI 1",
+    3: "HDMI 2",
+    4: "HDMI 3",
     5: "Netflix",
     6: "Prime Video",
     7: "Plex",
@@ -20,6 +20,7 @@ function PanasonicTV(log, config) {
         this.config = config;
         this.name = config["name"];
         this.HOST = config["ipaddress"];
+        inputs = JSON.parse(config["inputs"]);
     } else {
         this.log("No configuration found. Please add configuration in config.json");
         return;
@@ -201,19 +202,15 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     
     switch (desiredInput) {
         case 5: // Netflix
-            // this.tv.sendAppCommand("0010000200000001");
             this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0010000200000001</X_LaunchKeyword>");
             break;
         case 6: // Prime Video
-            // this.tv.sendAppCommand("0010000100170001");
             this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0010000100170001</X_LaunchKeyword>");
             break;
         case 7: // Plex
-            // this.tv.sendAppCommand("0076010507000001");
             this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0076010507000001</X_LaunchKeyword>");
             break;
         case 8: // YouTube
-            // this.tv.sendAppCommand("0070000200170001");
             this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=0070000200170001</X_LaunchKeyword>");
             break;
         default:
@@ -229,7 +226,8 @@ PanasonicTV.prototype.getOn = function(callback) {
     var powerStateSubscription = new UpnpSub(this.HOST, 55000, "/nrc/event_0");
 
     powerStateSubscription.on("message", (message) => {
-        let screenState = message.body["e:propertyset"]["e:property"][2]["X_ScreenState"];
+        let properties = message.body["e:propertyset"]["e:property"];
+        let screenState = properties.find(obj => obj.X_ScreenState)["X_ScreenState"];
         this.log("TV is " + screenState);
 
         if (screenState === "on") {
@@ -241,7 +239,7 @@ PanasonicTV.prototype.getOn = function(callback) {
 
     powerStateSubscription.on("error", () => {
         this.log("Couldn\'t check power state. Please check your TV\'s network connection.");
-        this.log("This TV may not support power on. Please check your TV's settings.")
+        this.log("Alternatively, your TV may not be correctly set up or it may not be able to perform power on from standby.");
         callback(null, false);
     });
 

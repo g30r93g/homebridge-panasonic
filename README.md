@@ -1,7 +1,5 @@
 # Homebridge plugin for Panasonic TV's
 
-[![ForTheBadge uses-js](http://ForTheBadge.com/images/badges/uses-js.svg)](http://ForTheBadge.com)
-
 [![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/313c17eb1c1145f085e7ecc1ce1c993e)](https://app.codacy.com/app/g30r93g/homebridge-panasonic?utm_source=github.com&utm_medium=referral&utm_content=g30r93g/homebridge-panasonic&utm_campaign=Badge_Grade_Dashboard)
 
@@ -24,12 +22,12 @@ Go to Menu -> Network -> TV Remote App Settings and make sure the following sett
 *  Powered On by Apps
 *  Networked Standby
 
-It is possible that the TV may not support power on by standby. To check this, install Panasonic's mobile app and try turning the TV on when it's off.
+It is possible that the TV may not support power on by standby. To check this, install Panasonic's mobile app and try turning the TV on and off.
 
 ## Installation
 
 1.  Install homebridge -> <http://homebridge.io>
-2.  Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv@4.4.0`
+2.  Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv@4.5.0`
 3.  Update your config.json file
 
 ## Sample Config
