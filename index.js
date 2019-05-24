@@ -213,12 +213,16 @@ PanasonicTV.prototype.determineInputType = function(type) {
 
 PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback)  {
     let input = inputList[desiredInput - 1];
-    this.log("Switching input to " + input.name);
 
     if (input.type === "APPLICATION") {
         this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=" + input.appID + "</X_LaunchKeyword>");
+        this.log("Opening " + input.name + " app");
+    } else if (input.type === "TV") {
+        this.tv.sendCommand("AD_CHANGE");
+        this.log("Switching to TV");
     } else {
         this.tv.sendCommand(input.id.toLowerCase().replace(" ", ""));
+        this.log("Switching to " + input.name);
     }
 
     callback(null, input);

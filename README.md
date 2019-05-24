@@ -27,7 +27,7 @@ It is possible that the TV may not support power on by standby. To check this, i
 ## Installation
 
 1.  Install homebridge -> <http://homebridge.io>
-2.  Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv@6.0.1`
+2.  Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv@6.1.0`
 3.  Update your config.json file
 
 ## Sample Config
@@ -55,8 +55,8 @@ Please configure the `inputs` section according to your input switching list and
 This is a partial list of apps that are on Viera TV's. Make sure that if you're adding an app that it exists.
 I will update this list, though if you know any more, I'd appreciate you sending me these in an issue.
 
-App Name  | App ID
--------------  | -------------
+App Name  |  App ID |
+-------------  | ------------- |
 Netflix  | `0010000200000001` |
 YouTube  | `0070000200170001` |
 Amazon Prime Video  | `0010000100170001` |
@@ -67,5 +67,3 @@ Plex  | `0076010507000001` |
 Rakuten TV  | `0020002A00000001` |
 Calendar  | `0387878700150020` |
 Browser  | `0077777700160002` |
-AccuWeather | `0070000C00000001` |
-Recorded TV | `0387878700000013` |
