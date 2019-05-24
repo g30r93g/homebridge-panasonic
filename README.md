@@ -57,15 +57,15 @@ I will update this list, though if you know any more, I'd appreciate you sending
 
 App Name  | App ID
 -------------  | -------------
-Netflix  | `0010000200000001`
-YouTube  | `0070000200170001`
-Amazon Prime Video  | `0010000100170001`
-BBC iPlayer  | `0020000A00170010`
-ITV Hub  | `0387878700000124`
-All 4  | `0387878700000125`
-Plex  | `0076010507000001`
-Rakuten TV  | `0020002A00000001`
-Calendar  | `0387878700150020`
-Browser  | `0077777700160002`
-AccuWeather | `0070000C00000001`
-Recorded TV | `0387878700000013`
+Netflix  | `0010000200000001` |
+YouTube  | `0070000200170001` |
+Amazon Prime Video  | `0010000100170001` |
+BBC iPlayer  | `0020000A00170010` |
+ITV Hub  | `0387878700000124` |
+All 4  | `0387878700000125` |
+Plex  | `0076010507000001` |
+Rakuten TV  | `0020002A00000001` |
+Calendar  | `0387878700150020` |
+Browser  | `0077777700160002` |
+AccuWeather | `0070000C00000001` |
+Recorded TV | `0387878700000013` |
