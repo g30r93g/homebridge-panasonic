@@ -55,8 +55,8 @@ Please configure the `inputs` section according to your input switching list and
 
 This is a partial list of apps that are on Viera TV's. Make sure that the app exists on your TV.
 
-|App Name|App ID|
-|-------------|-------------|
+| App Name    |    App ID               |
+| :---        |    :---------------:    |
 |Netflix|`0010000200000001`|
 |YouTube|`0070000200170001`|
 |Amazon Prime Video|`0010000100170001`|
