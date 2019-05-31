@@ -54,8 +54,6 @@ Please configure the `inputs` section according to your input switching list and
 
 This is a partial list of apps that are on Viera TV's. Make sure that the app exists on your TV.
 
-If you have any more, submit an issue with the app name and ID and I'll test it and add it.
-
 App Name  |  App ID |
 -------------  | ------------- |
 Netflix  | `0010000200000001` |
@@ -80,3 +78,11 @@ Calendar  | `0387878700150020` |
 VIERA Link  | `0387878700000016` |
 Recorded TV  | `0387878700000013` |
 Freeview Catch Up  | `0387878700000109` |
+
+If you want to find the App ID for an app yourself, follow these steps:
+1.  Install Wireshark
+2.  Install Panasonic TV Remote on your mobile device
+3.  Use your mobile device as a network interface in Wireshark
+4.  Use the Panasonic TV Remote app launcher to open the application you want
+5.  Filter results by 'http' and find the request to open YouTube (It will be in the XML with a tag called `X_LaunchApp`)
+6.  Find the app ID. It will look something like `<X_LaunchKeyword>product_id=000000000</X_LaunchKeyword>`. `product_id` is the app ID
