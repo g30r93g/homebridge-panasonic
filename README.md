@@ -58,7 +58,7 @@ This is a partial list of apps that are on Viera TV's. Make sure that the app ex
 |App Name|App ID|
 |:---|:---------------:|
 |Netflix|`0010000200000001`|
-|YouTube|`0070000200170001`|
+|YouTube|`0070000200170001`<br />or<br />`0070000200000001`|
 |Amazon Prime Video|`0010000100170001`|
 |Plex|`0076010507000001`|
 |BBC iPlayer|`0020000A00170010`|
@@ -79,6 +79,12 @@ This is a partial list of apps that are on Viera TV's. Make sure that the app ex
 |VIERA Link|`0387878700000016`|
 |Recorded TV|`0387878700000013`|
 |Freeview Catch Up|`0387878700000109`|
+|KIJK|`0020008300000001`|
+|NPO|`0020010200000001`|
+|NLZIET|`0076010907000001`|
+|Meteonews TV|`0020007100000001`|
+|Multiple Screens|`0387878700000050`|
+|Program Guide|`0387878700000003`|
 
 If you want to find the App ID for an app yourself, follow these steps:
 
