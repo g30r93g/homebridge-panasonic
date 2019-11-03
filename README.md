@@ -40,7 +40,7 @@ Please configure the `inputs` section according to your input switching list and
     {
         "accessory": "Panasonic-TV",
         "name": "YOUR_TV_NAME_HERE",
-        "ipAddress": "YOUR_TV_IP_ADDRESS_HERE",
+        "ipaddress": "YOUR_TV_IP_ADDRESS_HERE",
         "inputs": [
             {"id": "TV", "name": "TV", "type": "TV"},
             {"id" : "HDMI 1", "name": "Apple TV", "type": "HDMI"},
