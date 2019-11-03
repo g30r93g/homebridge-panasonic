@@ -48,9 +48,8 @@ PanasonicTV.prototype.getServices = function() {
         let model = response["root"]["device"]["modelNumber"];
 
         this.deviceInformation
-            .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
-            .setCharacteristic(Characteristic.SerialNumber, serialNumber)
-            .setCharacteristic(Characteristic.Model, model);
+            .getCharacteristic(Characteristic.SerialNumber).updateValue(serialNumber)
+            .getCharacteristic(Characteristic.Model).updateValue(model);
     });
 
     // Configure HomeKit TV Accessory
