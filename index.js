@@ -281,7 +281,12 @@ PanasonicTV.prototype.getOn = function(callback) {
         } else if (screenState === "none" || screenState === null) {
             this.log("Couldn\'t check power state.");
             this.log("Your TV may not be correctly set up or it may be incapable of performing power on from standby.");
-            callback(null, false);
+
+            if (screenState === "none") {
+                callback(null, true);
+            } else {
+                callback(null, false);
+            }
         } else {
             this.log("TV is off.");
             callback(null, false);
