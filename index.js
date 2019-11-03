@@ -43,14 +43,22 @@ PanasonicTV.prototype.getServices = function() {
         .setCharacteristic(Characteristic.SerialNumber, "Unknown")
         .setCharacteristic(Characteristic.Model, "Viera");
 
-    this.getInformation((response) => {
-        let serialNumber = response["root"]["device"]["UDN"].slice(5);
-        let model = response["root"]["device"]["modelNumber"];
+    // Currently Doesn't work :(
+    //
+    // this.getInformation((response) => {
+    //     let data = response["root"]
+    //     this.log(data)
 
-        this.deviceInformation
-            .getCharacteristic(Characteristic.SerialNumber).updateValue(serialNumber)
-            .getCharacteristic(Characteristic.Model).updateValue(model);
-    });
+    //     let serialNumber = data["device"]["UDN"].slice(5);
+    //     let model = data["device"]["modelNumber"];
+
+    //     this.log("Serial Number: " + serialNumber);
+    //     this.log("Model Number: " + model);
+
+    //     this.deviceInformation
+    //         .getCharacteristic(Characteristic.SerialNumber).updateValue(serialNumber)
+    //         .getCharacteristic(Characteristic.Model).updateValue(model);
+    // });
 
     // Configure HomeKit TV Accessory
     this.tvService = new Service.Television(this.name, "Television");
@@ -105,34 +113,38 @@ PanasonicTV.prototype.getServices = function() {
 
     services.push(this.deviceInformation, this.tvService, this.speakerService);
 
-    this.log("Initialisation complete.");
+    this.log("Initialization complete.");
     return services;
 };
 
 // TV Information
-PanasonicTV.prototype.getInformation = function(callback) {
-    var self = this;
-    self.infoCallback = callback;
+// PanasonicTV.prototype.getInformation = function(callback) {
+//     var self = this;
+//     self.infoCallback = callback;
     
-    var getRequest = {
-        host: this.ipAddress,
-        path: "/nrc/ddd.xml",
-        port: 55000,
-        method: "GET"
-    }
+//     var getRequest = {
+//         host: this.HOST,
+//         port: 55000,
+//         path: "/nrc/ddd.xml",
+//         method: "GET",
+//         headers: {
+//             "User-Agent": "Panasonic iOS VR-CP UPnP/2.0",
+//             'Content-Type': 'text/xml; charset="utf-8"'
+//         }
+//     }
 
-    var request = http.request(getRequest, function(result) {
-        result.setEncoding('utf8');
-        result.on('data', self.infoCallback(result));
-    });
+//     var request = http.request(getRequest, function(result) {
+//         result.setEncoding('utf8');
+//         result.on('data', self.infoCallback(result));
+//     });
 
-    request.on('error', function(error) {
-        console.log('error: ' + error.message);
-        console.log(error);
-    });
+//     request.on('error', function(error) {
+//         console.log('error: ' + error.message);
+//         console.log(error);
+//     });
 
-    request.end();
-};
+//     request.end();
+// };
 
 // TV Speaker
 PanasonicTV.prototype.getMute = function(callback) {
@@ -217,7 +229,7 @@ PanasonicTV.prototype.setupInputs = function() {
         let id = input.id;
         let name = input.name;
         let type = this.determineInputType(input.type);
-        this.log("Adding input " + counter + ": Name: " + name + ", Type: " + input.type);
+        this.log("Adding Input " + counter + ": Name: " + name + ", Type: " + input.type);
 
         configuredInputs.push(this.createInputSource(id, name, counter, type));
         counter = counter + 1;
@@ -272,12 +284,10 @@ PanasonicTV.prototype.getOn = function(callback) {
     var powerStateSubscription = new UpnpSub(this.HOST, 55000, "/nrc/event_0");
 
     powerStateSubscription.on("message", (message) => {
-        let screenState = message.body["e:propertyset"]["e:property"]["X_ScreenState"];
+        let properties = message.body["e:propertyset"]["e:property"];
+        let screenState = properties.find((property) => property.X_ScreenState)["X_ScreenState"];
 
-        if (screenState === "on") {
-            this.log("TV is on.");
-            callback(null, true);
-        } else if (screenState === "none" || screenState === null) {
+        if (screenState === "none" || screenState === null || screenState === undefined) {
             this.log("Couldn\'t check power state.");
             this.log("Your TV may not be correctly set up or it may be incapable of performing power on from standby.");
 
@@ -286,6 +296,9 @@ PanasonicTV.prototype.getOn = function(callback) {
             } else {
                 callback(null, false);
             }
+        } else if (screenState === "on") {
+            this.log("TV is on.");
+            callback(null, true);
         } else {
             this.log("TV is off.");
             callback(null, false);
