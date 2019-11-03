@@ -12,7 +12,7 @@ function PanasonicTV(log, config) {
     if (config) {
         this.config = config;
         this.name = config["name"];
-        this.HOST = config["ipAddress"];
+        this.HOST = config["ipaddress"];
     
         if (!config["inputs"]) {
             this.inputs = [];
