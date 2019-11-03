@@ -3,13 +3,13 @@
 [![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/313c17eb1c1145f085e7ecc1ce1c993e)](https://app.codacy.com/app/g30r93g/homebridge-panasonic?utm_source=github.com&utm_medium=referral&utm_content=g30r93g/homebridge-panasonic&utm_campaign=Badge_Grade_Dashboard)
 
-A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit TV accessory.
+A Homebridge plugin for Panasonic Viera TV's. Written to support the new HomeKit TV accessory.
 
-✅ Power on/off
+✅ Power TV On & Off (Requires TV that supports power on by standby.)
 
-✅ HomeKit TV Accessory (none of that light switch business)
+✅ HomeKit TV Accessory
 
-✅ Input switching (Currently has a preset list of inputs. You will be able to configure yourself soon.)
+✅ Input switching
 
 ## Requirements
 
@@ -40,7 +40,7 @@ Please configure the `inputs` section according to your input switching list and
     {
         "accessory": "Panasonic-TV",
         "name": "YOUR_TV_NAME_HERE",
-        "ipaddress": "YOUR_TV_IP_ADDRESS_HERE",
+        "ipAddress": "YOUR_TV_IP_ADDRESS_HERE",
         "inputs": [
             {"id": "TV", "name": "TV", "type": "TV"},
             {"id" : "HDMI 1", "name": "Apple TV", "type": "HDMI"},

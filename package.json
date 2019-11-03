@@ -1,7 +1,7 @@
 {
     "name": "homebridge-panasonic-viera-tv",
-    "version": "6.1.2",
-    "description": "A Homebridge plugin for Panasonic Viera TV's. Written to support the new Homekit TV accessory.",
+    "version": "6.2.0",
+    "description": "A Homebridge plugin for Panasonic Viera TV's. Written to support the new HomeKit TV accessory.",
     "license": "MIT",
     "main": "index.js",
     "scripts": {
@@ -12,7 +12,7 @@
         "homebridge-plugin",
         "panasonic-tv",
 		"panasonic",
-		"viera"
+        "viera"
     ],
     "engines": {
         "homebridge": "^0.4.46"
@@ -26,6 +26,6 @@
     },
     "dependencies": {
         "node-upnp-subscription": "^1.0.6",
-        "viera.js": "0.1.5"
+        "viera.js": "^0.1.5"
     }
 }

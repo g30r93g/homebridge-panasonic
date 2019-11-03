@@ -1,5 +1,9 @@
+// Created by George Nick Gorzynski (@g30r93g)
+//
+
 var PanasonicCommands = require("viera.js");
 var UpnpSub = require("node-upnp-subscription");
+var http = require('http');
 var Service, Characteristic;
 
 // Configure TV
@@ -8,7 +12,7 @@ function PanasonicTV(log, config) {
     if (config) {
         this.config = config;
         this.name = config["name"];
-        this.HOST = config["ipaddress"];
+        this.HOST = config["ipAddress"];
     
         if (!config["inputs"]) {
             this.inputs = [];
@@ -33,21 +37,32 @@ PanasonicTV.prototype.getServices = function() {
 
     // Configure HomeKit TV Device Information
     this.deviceInformation = new Service.AccessoryInformation();
+
     this.deviceInformation
         .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
-        .setCharacteristic(Characteristic.SerialNumber, "Unavailable")
+        .setCharacteristic(Characteristic.SerialNumber, "Unknown")
         .setCharacteristic(Characteristic.Model, "Viera");
+
+    this.getInformation((response) => {
+        let serialNumber = response["root"]["device"]["UDN"].slice(5);
+        let model = response["root"]["device"]["modelNumber"];
+
+        this.deviceInformation
+            .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
+            .setCharacteristic(Characteristic.SerialNumber, serialNumber)
+            .setCharacteristic(Characteristic.Model, model);
+    });
 
     // Configure HomeKit TV Accessory
     this.tvService = new Service.Television(this.name, "Television");
     this.tvService
         .setCharacteristic(Characteristic.ConfiguredName, this.name)
         .setCharacteristic(Characteristic.SleepDiscoveryMode, 1);
-  
+    
     this.tvService.getCharacteristic(Characteristic.Active)
         .on("get", this.getOn.bind(this))
         .on("set", this.setOn.bind(this));
-
+    
     // Configure HomeKit TV Accessory Remote Control
     this.tvService
         .getCharacteristic(Characteristic.RemoteKey)
@@ -93,6 +108,31 @@ PanasonicTV.prototype.getServices = function() {
 
     this.log("Initialisation complete.");
     return services;
+};
+
+// TV Information
+PanasonicTV.prototype.getInformation = function(callback) {
+    var self = this;
+    self.infoCallback = callback;
+    
+    var getRequest = {
+        host: this.ipAddress,
+        path: "/nrc/ddd.xml",
+        port: 55000,
+        method: "GET"
+    }
+
+    var request = http.request(getRequest, function(result) {
+        result.setEncoding('utf8');
+        result.on('data', self.infoCallback(result));
+    });
+
+    request.on('error', function(error) {
+        console.log('error: ' + error.message);
+        console.log(error);
+    });
+
+    request.end();
 };
 
 // TV Speaker
@@ -233,13 +273,17 @@ PanasonicTV.prototype.getOn = function(callback) {
     var powerStateSubscription = new UpnpSub(this.HOST, 55000, "/nrc/event_0");
 
     powerStateSubscription.on("message", (message) => {
-        let properties = message.body["e:propertyset"]["e:property"];
-        let screenState = properties.find((obj) => obj.X_ScreenState)["X_ScreenState"];
-        this.log("TV is " + screenState);
+        let screenState = message.body["e:propertyset"]["e:property"]["X_ScreenState"];
 
         if (screenState === "on") {
+            this.log("TV is on.");
             callback(null, true);
+        } else if (screenState === "none" || screenState === null) {
+            this.log("Couldn\'t check power state.");
+            this.log("Your TV may not be correctly set up or it may be incapable of performing power on from standby.");
+            callback(null, false);
         } else {
+            this.log("TV is off.");
             callback(null, false);
         }
     });
