@@ -12,7 +12,7 @@ A Homebridge plugin for Panasonic Viera TV's. Written to support the new HomeKit
 ✅ Input switching
 
 ## Version Notes
-The reported power state of the TV should be more stable. 
+The reported power state of the TV should be more stable. Any issues regarding power state, please see issue #32.
 
 ## Requirements
 
