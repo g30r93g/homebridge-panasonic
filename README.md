@@ -5,11 +5,14 @@
 
 A Homebridge plugin for Panasonic Viera TV's. Written to support the new HomeKit TV accessory.
 
-✅ Power TV On & Off (Requires TV that supports power on by standby.)
+✅ Power On/Off
 
 ✅ HomeKit TV Accessory
 
 ✅ Input switching
+
+## Version Notes
+The reported power state of the TV should be more stable. 
 
 ## Requirements
 
@@ -27,8 +30,8 @@ It is possible that the TV may not support power on by standby. To check this, i
 
 ## Installation
 
-1.  Install homebridge –> <http://homebridge.io>
-2.  Install this plugin –> `sudo npm install -g homebridge-panasonic-viera-tv@6.2.4`
+1.  Install homebridge -> <http://homebridge.io>
+2.  Install this plugin -> `sudo npm install -g homebridge-panasonic-viera-tv`
 3.  Update your config.json file
 
 ## Sample Config
@@ -41,6 +44,8 @@ Please configure the `inputs` section according to your input switching list and
         "accessory": "Panasonic-TV",
         "name": "YOUR_TV_NAME_HERE",
         "ipaddress": "YOUR_TV_IP_ADDRESS_HERE",
+        "model": "YOUR_TV_MODEL_HERE_(OPTIONAL)",
+        "serialNumber": "YOUR_TV_SERIAL_NUMBER_HERE_(OPTIONAL)",
         "inputs": [
             {"id": "TV", "name": "TV", "type": "TV"},
             {"id" : "HDMI 1", "name": "Apple TV", "type": "HDMI"},
@@ -58,7 +63,7 @@ This is a partial list of apps that are on Viera TV's. Make sure that the app ex
 |App Name|App ID|
 |:---|:---------------:|
 |Netflix|`0010000200000001`|
-|YouTube|`0070000200170001`<br />or<br />`0070000200000001`|
+|YouTube|`0070000200170001`|
 |Amazon Prime Video|`0010000100170001`|
 |Plex|`0076010507000001`|
 |BBC iPlayer|`0020000A00170010`|
@@ -79,12 +84,6 @@ This is a partial list of apps that are on Viera TV's. Make sure that the app ex
 |VIERA Link|`0387878700000016`|
 |Recorded TV|`0387878700000013`|
 |Freeview Catch Up|`0387878700000109`|
-|KIJK|`0020008300000001`|
-|NPO|`0020010200000001`|
-|NLZIET|`0076010907000001`|
-|Meteonews TV|`0020007100000001`|
-|Multiple Screens|`0387878700000050`|
-|Program Guide|`0387878700000003`|
 
 If you want to find the App ID for an app yourself, follow these steps:
 
