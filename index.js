@@ -254,7 +254,7 @@ PanasonicTV.prototype.getOn = function(callback) {
         let properties = message.body["e:propertyset"]["e:property"];
         
         // Ensure properties is an array, otherwise it causes `properties.filter is not a function`
-        if not properties.isArray() {
+        if !properties.isArray() {
             callback(null, false)
         }
         
