@@ -48,9 +48,9 @@ Please configure the `inputs` section according to your input switching list and
         "serialNumber": "YOUR_TV_SERIAL_NUMBER_HERE_(OPTIONAL)",
         "inputs": [
             {"id": "TV", "name": "TV", "type": "TV"},
-            {"id" : "HDMI 1", "name": "Apple TV", "type": "HDMI"},
-            {"id" : "HDMI 2", "name": "Fire TV Stick", "type": "HDMI"},
-            {"id" : "Netflix", "name": "Netflix", "type": "APPLICATION", "appID": "0010000200000001"}
+            {"id": "HDMI 1", "name": "Apple TV", "type": "HDMI"},
+            {"id": "HDMI 2", "name": "Fire TV Stick", "type": "HDMI"},
+            {"id": "Netflix", "name": "Netflix", "type": "APPLICATION", "appID": "0010000200000001"}
         ]
     }
 ]
