@@ -252,8 +252,14 @@ PanasonicTV.prototype.getOn = function(callback) {
 
     powerStateSubscription.on("message", (message) => {
         let properties = message.body["e:propertyset"]["e:property"];
+        
+        // Ensure properties is an array, otherwise it causes `properties.filter is not a function`
+        if not properties.isArray() {
+            callback(null, false)
+        }
+        
         let matchingProperties = properties.filter(property => property.X_ScreenState === "on" || property.X_ScreenState === "off")
-
+        
         if (matchingProperties != []) {
             let screenState = matchingProperties[0].X_ScreenState
 
