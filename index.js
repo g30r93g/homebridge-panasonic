@@ -1,7 +1,7 @@
 // Created by George Nick Gorzynski (@g30r93g)
 // 
 
-var PanasonicCommands = require("viera.js");
+var PanasonicCommands = require("viera.js-g30r93g");
 var UpnpSub = require("node-upnp-subscription");
 var Service, Characteristic;
 
