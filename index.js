@@ -11,7 +11,7 @@ function PanasonicTV(log, config) {
     if (config) {
         this.config = config;
         this.name = config["name"];
-        this.HOST = config["ipaddress"];
+        this.ipAddress = config["ipaddress"];
 
         if (!config["inputs"]) {
             this.inputs = [];
@@ -47,7 +47,7 @@ module.exports = function(homebridge) {
 
 PanasonicTV.prototype.getServices = function() {
     var services = [];
-    this.tv = new PanasonicCommands(this.HOST);
+    this.tv = new PanasonicCommands(this.ipAddress);
 
     // Configure TV Information
     this.deviceInformation = new Service.AccessoryInformation();
@@ -248,18 +248,19 @@ PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback) {
 
 // TV Power
 PanasonicTV.prototype.getOn = function(callback) {
-    var powerStateSubscription = new UpnpSub(this.HOST, 55000, "/nrc/event_0");
+    var powerStateSubscription = new UpnpSub(this.ipAddress, 55000, "/nrc/event_0");
 
     powerStateSubscription.on("message", (message) => {
         let properties = message.body["e:propertyset"]["e:property"];
-        
+
         // Ensure properties is an array, otherwise it causes `properties.filter is not a function`
-        if !properties.isArray() {
+        if (Object.prototype.toString.call(properties) != '[object Array]') {
+            this.log(`Unsuccessful communication with TV.`)
             callback(null, false)
         }
-        
+
         let matchingProperties = properties.filter(property => property.X_ScreenState === "on" || property.X_ScreenState === "off")
-        
+
         if (matchingProperties != []) {
             let screenState = matchingProperties[0].X_ScreenState
 
