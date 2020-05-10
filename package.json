@@ -31,6 +31,6 @@
     },
     "dependencies": {
         "node-upnp-subscription": ">=1.0.6",
-        "viera.js": "0.1.5"
+        "viera.js-g30r93g": "0.3.0"
     }
 }
