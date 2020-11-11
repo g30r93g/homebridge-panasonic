@@ -5,14 +5,12 @@
 
 A Homebridge plugin for Panasonic Viera TV's. Written to support the new HomeKit TV accessory.
 
-✅ Power On/Off
 
-✅ HomeKit TV Accessory
+## Archive Message
 
-✅ Input switching
+Hi all. After several months of inactivity, I've looked at the work this plugin needs, and the progress made by Antonio Meireles in the [homebridge-vieramatic](https://github.com/AntonioMeireles/homebridge-vieramatic) plugin and I feel that there is little need for this plugin. Any notable differences (if any) between this plugin and homebridge-vieramatic will be identified and PR'd.
 
-## Version Notes
-The reported power state of the TV should be more stable. 
+I'd like to thank all of you who opened issues and used this plugin, as well as the Homebridge community for questions and pointers.
 
 ## Requirements
 
