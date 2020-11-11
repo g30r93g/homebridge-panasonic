@@ -3,16 +3,20 @@
 [![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/313c17eb1c1145f085e7ecc1ce1c993e)](https://app.codacy.com/app/g30r93g/homebridge-panasonic?utm_source=github.com&utm_medium=referral&utm_content=g30r93g/homebridge-panasonic&utm_campaign=Badge_Grade_Dashboard)
 
-A Homebridge plugin for Panasonic Viera TV's. Written to support the new HomeKit TV accessory.
-
-✅ Power On/Off
-
-✅ HomeKit TV Accessory
-
-✅ Input switching
+A Homebridge Plugin for Panasonic TVs, written for the TV accessory. 
 
 ## Version Notes
-The reported power state of the TV should be more stable. 
+
+This is the first release of the plugin rewrite. There are several features missing for the time being.
+
+Here is the list:
+
+* Power State - Implemented
+* Input Adding - Not Implemented
+* Input Switching - Not Implemented
+* TV Remote - Not Implemented
+* TV Speaker - Not Implemented
+* Homebridge UI Support - Not Implemented
 
 ## Requirements
 
@@ -39,11 +43,11 @@ It is possible that the TV may not support power on by standby. To check this, i
 Please configure the `inputs` section according to your input switching list and ensure that when using an application that the `appID` is included.
 
 ``` JSON
-"accessories": [
+"platforms": [
     {
-        "accessory": "Panasonic-TV",
+        "platform": "Panasonic-TV",
         "name": "YOUR_TV_NAME_HERE",
-        "ipaddress": "YOUR_TV_IP_ADDRESS_HERE",
+        "ipAddress": "YOUR_TV_IP_ADDRESS_HERE",
         "model": "YOUR_TV_MODEL_HERE_(OPTIONAL)",
         "serialNumber": "YOUR_TV_SERIAL_NUMBER_HERE_(OPTIONAL)",
         "inputs": [
@@ -70,7 +74,7 @@ This is a partial list of apps that are on Viera TV's. Make sure that the app ex
 |BBC News|`0020000A00170006`|
 |BBC Sport|`0020000A00170007`|
 |ITV Hub|`0387878700000124`|
-|TuneIn|`0010001800000001`|
+|TuneIn Radio|`0010001800000001`|
 |AccuWeather|`0070000C00000001`|
 |All 4|`0387878700000125`|
 |Demand 5|`0020009300000002`|

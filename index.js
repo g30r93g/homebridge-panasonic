@@ -1,17 +1,45 @@
 // Created by George Nick Gorzynski (@g30r93g)
+// Version 8.0.0 beta 1
 // 
 
 var PanasonicCommands = require("viera.js-g30r93g");
 var UpnpSub = require("node-upnp-subscription");
-var Service, Characteristic;
+var Service, Characteristic, CharacteristicEventTypes, UUID;
 
-// Configure TV
-function PanasonicTV(log, config) {
-    this.log = log;
-    if (config) {
-        this.config = config;
+const pluginName = "homebridge-panasonic-viera-tv";
+const platformName = "PanasonicTV";
+
+module.exports = (homebridge) => {
+    Service = homebridge.hap.Service;
+    Characteristic = homebridge.hap.Characteristic;
+    CharacteristicEventTypes = homebridge.hap.CharacteristicEventTypes;
+    UUID = homebridge.hap.uuid;
+
+    homebridge.registerPlatform(platformName, PanasonicTV);
+};
+
+class PanasonicTV {
+
+    constructor(log, config, homebridge) {
+        this.log = log;
+
+        homebridge.on('didFinishLaunching', () => {
+            if (config) {
+                this.parseConfig(config);
+
+                this.tvCommands = new PanasonicCommands(this.tvIP)
+
+                this.setupTV(homebridge);
+            } else {
+                this.log("No configuration found. Please add configuration in config.json");
+                return;
+            }
+        })
+    };
+
+    parseConfig(config) {
         this.name = config["name"];
-        this.ipAddress = config["ipaddress"];
+        this.tvIP = config["ipAddress"];
 
         if (!config["inputs"]) {
             this.inputs = [];
@@ -30,265 +58,105 @@ function PanasonicTV(log, config) {
         } else {
             this.model = config["model"]
         }
-        this.log(`Configured Panasonic TV named ${this.name} with IP ${this.HOST}.`)
+        this.log(`Configured Panasonic TV named ${this.name} with IP ${this.tvIP}.`)
         this.log(`Serial Number: ${this.serialNumber}`)
         this.log(`Model: ${this.model}`)
-    } else {
-        this.log("No configuration found. Please add configuration in config.json");
-        return;
+    };
+
+    setupTV(homebridge) {
+        this.tvAccessory = this.setupTVAccessory(homebridge)
+        this.tvService = this.tvAccessory.addService(Service.Television)
+
+        this.powerState = 0
+
+        this.setTVCharacteristics()
+        this.addTVPowerStateBindings()
+        this.listenToTVPowerState()
+
+        homebridge.publishExternalAccessories(pluginName, [this.tvAccessory])
+    };
+
+    setupTVAccessory(homebridge) {
+        this.uuid = UUID.generate("homebridge:" + pluginName + ":" + this.name);
+
+        var tvAccessory = new homebridge.platformAccessory(this.name, this.uuid);
+        tvAccessory.category = homebridge.hap.Categories.TELEVISION;
+
+        return tvAccessory
+    };
+
+    setTVCharacteristics() {
+        this.tvService
+            .setCharacteristic(Characteristic.ConfiguredName, this.name)
+            .setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE)
+
+        this.tvAccessory
+            .getService(Service.AccessoryInformation)
+            .updateCharacteristic(Characteristic.Manufacturer, "Panasonic")
+            .updateCharacteristic(Characteristic.SerialNumber, this.serialNumber)
+            .updateCharacteristic(Characteristic.Name, this.name)
+            .updateCharacteristic(Characteristic.Model, this.model);
+
+        this.log("Added TV Characteristics")
+    };
+
+    addTVPowerStateBindings() {
+        this.tvAccessory
+            .getService(Service.Television)
+            .getCharacteristic(Characteristic.Active)
+            .on(CharacteristicEventTypes.SET, this.setTVPowerState.bind(this));
+
+        this.log("Added TV Power State Bindings")
+    };
+
+    setTVPowerState(currentState, callback) {
+        this.tvCommands.sendCommand("POWER");
+
+        this.log(`Powering TV ${(currentState === true ? 'off' : 'on')}`)
+        callback(null, currentState);
     }
-}
 
-module.exports = function(homebridge) {
-    Service = homebridge.hap.Service;
-    Characteristic = homebridge.hap.Characteristic;
-    homebridge.registerAccessory("homebridge-panasonic", "Panasonic-TV", PanasonicTV);
-};
+    listenToTVPowerState() {
+        var powerStateSubscription = new UpnpSub(this.tvIP, 55000, "/nrc/event_0");
 
-PanasonicTV.prototype.getServices = function() {
-    var services = [];
-    this.tv = new PanasonicCommands(this.ipAddress);
+        // Send a power command twice in order to obtain the correct power state
+        this.tvCommands.sendCommand("POWER");
+        this.tvCommands.sendCommand("POWER");
 
-    // Configure TV Information
-    this.deviceInformation = new Service.AccessoryInformation();
-    this.deviceInformation
-        .setCharacteristic(Characteristic.Manufacturer, "Panasonic")
-        .setCharacteristic(Characteristic.SerialNumber, this.serialNumber)
-        .setCharacteristic(Characteristic.Model, this.model);
+        powerStateSubscription.on("message", (message) => {
+            let properties = message.body["e:propertyset"]["e:property"];
+            this.log(properties)
 
-    // Configure TV Accessory
-    this.tvService = new Service.Television(this.name, "Television");
-    this.tvService
-        .setCharacteristic(Characteristic.ConfiguredName, this.name)
-        .setCharacteristic(Characteristic.SleepDiscoveryMode, 1);
+            if (properties.isArray) {
+                // List of Properties that require filtering
+                let matchingProperties = properties.filter(property => property.X_ScreenState === "on" || property.X_ScreenState === "off")
+                this.log(matchingProperties)
 
-    this.tvService.getCharacteristic(Characteristic.Active)
-        .on("get", this.getOn.bind(this))
-        .on("set", this.setOn.bind(this));
+                let screenState = matchingProperties[0].X_ScreenState
 
-    // Configure Remote Control
-    this.tvService
-        .getCharacteristic(Characteristic.RemoteKey)
-        .on("set", this.remoteControl.bind(this));
+                this.updateTVPowerState(screenState)
+            } else if (typeof properties === "object") {
+                // Object that only contains screen state
+                let screenState = properties.X_ScreenState
 
-    // Configure Volume Control
-    this.speakerService = new Service.TelevisionSpeaker(this.name + " Volume", "volumeService");
-
-    this.speakerService
-        .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
-        .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
-
-    this.speakerService
-        .getCharacteristic(Characteristic.VolumeSelector)
-        .on("set", (newValue, callback) => {
-            this.tv.setVolume(newValue);
-            callback(null, newValue);
+                this.updateTVPowerState(screenState)
+            } else {
+                this.log("Message from TV did not contain ScreenState property. This may mean that power on from standby is unsupported. If this is incorrect, please file an issue.")
+            }
         });
 
-    this.speakerService
-        .getCharacteristic(Characteristic.Mute)
-        .on("get", this.getMute.bind(this))
-        .on("set", this.setMute.bind(this));
-
-    this.speakerService
-        .addCharacteristic(Characteristic.Volume)
-        .on("get", this.getVolume.bind(this))
-        .on("set", this.setVolume.bind(this));
-
-    this.tvService.addLinkedService(this.speakerService);
-
-    // Configure TV Inputs
-    this.tvService.getCharacteristic(Characteristic.ActiveIdentifier)
-        .on("set", this.setInput.bind(this, this.inputs));
-
-    var configuredInputs = this.setupInputs();
-    configuredInputs.forEach((input) => {
-        this.tvService.addLinkedService(input);
-        services.push(input);
-    });
-
-    services.push(this.tvService, this.deviceInformation);
-
-    this.log("HomeKit Setup Complete.");
-    return services;
-};
-
-// TV Speaker
-PanasonicTV.prototype.getMute = function(callback) {
-    this.tv.getMute((status) => {
-        this.log("Mute status: " + status);
-        callback(null, status);
-    });
-};
-
-PanasonicTV.prototype.setMute = function(value, callback) {
-    this.tv.setMute(!value);
-    callback(null, !value);
-};
-
-PanasonicTV.prototype.getVolume = function(callback) {
-    this.tv.getVolume((volume) => {
-        this.log("Volume status: " + volume);
-        callback(null, volume);
-    });
-};
-
-PanasonicTV.prototype.setVolume = function(value, callback) {
-    this.tv.setVolume(value);
-    callback(null, value);
-};
-
-// TV Remote Control
-PanasonicTV.prototype.remoteControl = function(action, callback) {
-    this.log("Remote Control Action: " + action);
-
-    switch (action) {
-        case 0: // Rewind
-            this.tv.sendCommand("REW");
-            break;
-        case 1: // Fast Forward
-            this.tv.sendCommand("FF");
-            break;
-        case 2: // Next Track
-            this.tv.sendCommand("SKIP_NEXT");
-            break;
-        case 3: // Previous Track
-            this.tv.sendCommand("SKIP_PREV");
-            break;
-        case 4: // Up Arrow
-            this.tv.sendCommand("UP");
-            break;
-        case 5: // Down Arrow
-            this.tv.sendCommand("DOWN");
-            break;
-        case 6: // Left Arrow
-            this.tv.sendCommand("LEFT");
-            break;
-        case 7: // Right Arrow
-            this.tv.sendCommand("RIGHT");
-            break;
-        case 8: // Select
-            this.tv.sendCommand("ENTER");
-            break;
-        case 9: // Back
-            this.tv.sendCommand("RETURN");
-            break;
-        case 10: // Exit
-            this.tv.sendCommand("CANCEL");
-            break;
-        case 11: // Play / Pause
-            this.tv.sendCommand("PLAY");
-            break;
-        case 15: // Information
-            this.tv.sendCommand("HOME");
-            break;
+        powerStateSubscription.on("error", () => {
+            this.log("Couldn\'t check power state. Please check your TV\'s network connection.");
+            this.log("Alternatively, your TV may not be correctly set up or it may not be able to perform power on from standby.");
+        });
     }
 
-    callback(null, action);
-};
+    updateTVPowerState(screenState) {
+        this.log(`TV screen is ${screenState}`)
+        this.powerState = (screenState === "on")
+        this.tvAccessory
+            .getService(Service.Television)
+            .updateCharacteristic(Characteristic.Active, this.powerState)
+    };
 
-// TV Inputs
-PanasonicTV.prototype.setupInputs = function() {
-    var configuredInputs = [];
-    var counter = 1;
-
-    this.inputs.forEach((input) => {
-        let id = input.id;
-        let name = input.name;
-        let type = this.determineInputType(input.type);
-        this.log("Adding input " + counter + ": Name: " + name + ", Type: " + input.type);
-
-        configuredInputs.push(this.createInputSource(id, name, counter, type));
-        counter = counter + 1;
-    });
-
-    return configuredInputs;
-};
-
-PanasonicTV.prototype.createInputSource = function(id, name, number, type) {
-    var input = new Service.InputSource(id.toLowerCase().replace(" ", ""), name);
-    input
-        .setCharacteristic(Characteristic.Identifier, number)
-        .setCharacteristic(Characteristic.ConfiguredName, name)
-        .setCharacteristic(Characteristic.InputSourceType, type)
-        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED);
-
-    return input;
-};
-
-PanasonicTV.prototype.determineInputType = function(type) {
-    switch (type) {
-        case "TV":
-            return Characteristic.InputSourceType.TUNER;
-        case "HDMI":
-            return Characteristic.InputSourceType.HDMI;
-        case "APPLICATION":
-            return Characteristic.InputSourceType.APPLICATION;
-        default:
-            return Characteristic.InputSourceType.OTHER;
-    }
-};
-
-PanasonicTV.prototype.setInput = function(inputList, desiredInput, callback) {
-    let input = inputList[desiredInput - 1];
-
-    if (input.type === "APPLICATION") {
-        this.tv.sendRequest("command", "X_LaunchApp", "<X_AppType>vc_app</X_AppType><X_LaunchKeyword>product_id=" + input.appID + "</X_LaunchKeyword>");
-        this.log("Opening " + input.name + " app");
-    } else if (input.type === "TV") {
-        this.tv.sendCommand("AD_CHANGE");
-        this.log("Switching to TV");
-    } else {
-        this.tv.sendCommand(input.id.toLowerCase().replace(" ", ""));
-        this.log("Switching to " + input.name);
-    }
-
-    callback(null, input);
-};
-
-// TV Power
-PanasonicTV.prototype.getOn = function(callback) {
-    var powerStateSubscription = new UpnpSub(this.ipAddress, 55000, "/nrc/event_0");
-
-    powerStateSubscription.on("message", (message) => {
-        let properties = message.body["e:propertyset"]["e:property"];
-
-        // Ensure properties is an array, otherwise it causes `properties.filter is not a function`
-        if (Object.prototype.toString.call(properties) != '[object Array]') {
-            this.log(`Unsuccessful communication with TV.`)
-            callback(null, false)
-        }
-
-        let matchingProperties = properties.filter(property => property.X_ScreenState === "on" || property.X_ScreenState === "off")
-
-        if (matchingProperties != []) {
-            let screenState = matchingProperties[0].X_ScreenState
-
-            this.log(`X_ScreenState: ${screenState}`)
-            callback(null, (screenState === "on"));
-        } else {
-            // TODO: Set TV as 'Not Responding'
-            callback(null, false);
-        }
-    });
-
-    powerStateSubscription.on("error", () => {
-        this.log("Couldn\'t check power state. Please check your TV\'s network connection.");
-        this.log("Alternatively, your TV may not be correctly set up or it may not be able to perform power on from standby.");
-        callback(null, false);
-    });
-
-    setTimeout(powerStateSubscription.unsubscribe, 1200);
-};
-
-PanasonicTV.prototype.setOn = function(turnOn, callback) {
-    if (turnOn) {
-        this.log("Powering TV on...");
-        this.tv.sendCommand("POWER");
-        callback(null, !turnOn);
-    } else {
-        this.log("Powering TV off...");
-        this.tv.sendCommand("POWER");
-        callback(null, !turnOn);
-    }
 };
